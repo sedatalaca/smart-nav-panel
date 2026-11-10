@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <title>Navigasyon</title>
+  <style>
+    :root { --bg:#15161a; --card:#1d1f25; --line:#2b2e36; --text:#e8e9ee; --muted:#9a9cab; --acc:#37a8a8; --on-acc:#fff; --ok:#22c55e; --off:#f87171; }
+    body.light { --bg:#f6f7fa; --card:#ffffff; --line:#e1e4ea; --text:#1d2027; --muted:#5f6472; --acc:#1f8a8a; --on-acc:#fff; --ok:#16a34a; --off:#dc2626; }
+    * { box-sizing:border-box; }
+    body { font:13px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; width:300px; margin:0; background:var(--bg); color:var(--text); }
+    svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; display:block; }
+    .head { display:flex; align-items:center; gap:10px; padding:12px 14px; }
+    .head img { width:26px; height:26px; border-radius:7px; }
+    .head h1 { font-size:14px; margin:0; flex:1; font-weight:700; letter-spacing:-.01em; }
+    .head .ver { font-size:10.5px; color:var(--muted); }
+    .site { margin:0 12px; padding:10px 12px; border-radius:12px; background:var(--card); border:1px solid var(--line); display:flex; align-items:center; gap:10px; }
+    .site .dot { width:9px; height:9px; border-radius:50%; background:var(--ok); flex:none; box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 22%,transparent); }
+    .site.off .dot { background:var(--off); box-shadow:0 0 0 3px color-mix(in srgb,var(--off) 22%,transparent); }
+    .site b { display:block; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .site small { display:block; color:var(--muted); font-size:11.5px; }
+    .site div { min-width:0; }
+    .nav { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:10px 12px 4px; }
+    .nav button { appearance:none; border:1px solid var(--line); background:var(--card); color:var(--text); height:38px; border-radius:10px; cursor:pointer; display:grid; place-items:center; transition:.15s; }
+    .nav button:hover { border-color:var(--acc); color:var(--acc); }
+    .nav button:focus-visible, .seg button:focus-visible, .btn:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+    .sec { padding:12px 14px 6px; font-size:10.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+    .seg { margin:0 12px; display:grid; grid-template-columns:repeat(3,1fr); gap:3px; padding:3px; border-radius:11px; background:var(--card); border:1px solid var(--line); }
+    .seg button { appearance:none; border:0; background:transparent; color:var(--muted); padding:8px 4px; border-radius:8px; font:600 12px/1 inherit; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; }
+    .seg button svg { width:14px; height:14px; }
+    .seg button.on { background:var(--acc); color:var(--on-acc); }
+    .why { margin:6px 14px 0; font-size:11.5px; color:var(--muted); }
+    .why b { color:var(--text); font-weight:600; }
+    .row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 14px; }
+    .row .lbl { min-width:0; }
+    .row .lbl small { display:block; color:var(--muted); font-size:11px; }
+    .switch { position:relative; display:inline-block; width:38px; height:22px; flex:none; }
+    .switch input { opacity:0; width:0; height:0; }
+    .slider { position:absolute; cursor:pointer; inset:0; background:var(--line); border-radius:22px; transition:.2s; }
+    .slider:before { content:""; position:absolute; height:16px; width:16px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+    .switch input:checked + .slider { background:var(--acc); }
+    .switch input:checked + .slider:before { transform:translateX(16px); }
+    .switch input:focus-visible + .slider { outline:2px solid var(--acc); outline-offset:2px; }
+    .foot { padding:8px 12px 12px; }
+    .btn { appearance:none; width:100%; border:1px solid var(--line); background:transparent; color:var(--text); padding:9px; border-radius:10px; cursor:pointer; font:600 12.5px/1 inherit; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .btn:hover { border-color:var(--acc); color:var(--acc); }
+    .btn svg { width:15px; height:15px; }
+    .keys { padding:0 14px 12px; color:var(--muted); font-size:10.5px; line-height:1.6; }
+    kbd { font:600 10px ui-monospace,Menlo,monospace; padding:1px 5px; border:1px solid var(--line); border-bottom-width:2px; border-radius:4px; background:var(--card); color:var(--text); }
+    .msg { margin:12px; padding:16px; border-radius:12px; background:var(--card); border:1px solid var(--line); text-align:center; color:var(--muted); line-height:1.5; }
+    hr { border:0; border-top:1px solid var(--line); margin:8px 12px; }
+  </style>
+</head>
+<body>
+  <div class="head"><img src="icons/icon32.png" alt=""><h1 id="title">Navigasyon</h1><span class="ver" id="ver"></span></div>
+  <div id="content"></div>
+  <script src="shared.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

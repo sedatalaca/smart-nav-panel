@@ -1,0 +1,80 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extension_name__",
+  "version": "5.1",
+  "description": "__MSG_extension_description__",
+  "author": "Sedat Alaca (LikaPulse) — LikaGroup",
+  "homepage_url": "https://github.com/sedatalaca/smart-nav-panel",
+  "default_locale": "en",
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+8"
+      }
+    },
+    "toggle-panel": {
+      "suggested_key": {
+        "default": "Alt+Shift+N"
+      },
+      "description": "__MSG_cmdTogglePanel__"
+    },
+    "toggle-theme": {
+      "suggested_key": {
+        "default": "Alt+Shift+T"
+      },
+      "description": "__MSG_cmdToggleTheme__"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "dark.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "shared.js",
+        "content.js"
+      ],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

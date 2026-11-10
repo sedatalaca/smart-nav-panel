@@ -1,0 +1,18 @@
+{
+  "extension_name": {
+    "message": "Navigasyon Paneli",
+    "description": "Eklenti adı"
+  },
+  "extension_description": {
+    "message": "Her sitede çalışan akıllı gezinme paneli: okuma ilerlemesi, başlık gezgini, yer imleri, otomatik kaydırma ve sitenin kendi karanlık moduna saygı duyan akıllı karartma.",
+    "description": "Eklenti açıklaması"
+  },
+  "cmdTogglePanel": {
+    "message": "Paneli bu sitede göster / gizle",
+    "description": "Toggle panel command"
+  },
+  "cmdToggleTheme": {
+    "message": "Bu sitede karartma: Otomatik → Açık → Kapalı",
+    "description": "Toggle theme command"
+  }
+}

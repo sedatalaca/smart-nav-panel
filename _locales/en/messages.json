@@ -1,0 +1,18 @@
+{
+  "extension_name": {
+    "message": "Navigation Panel",
+    "description": "Extension name"
+  },
+  "extension_description": {
+    "message": "A smart navigation panel for every site: reading progress, heading navigator, bookmarks, auto-scroll and smart dimming that respects a site's own dark mode.",
+    "description": "Extension description"
+  },
+  "cmdTogglePanel": {
+    "message": "Show / hide the panel on this site",
+    "description": "Toggle panel command"
+  },
+  "cmdToggleTheme": {
+    "message": "Dimming on this site: Auto → On → Off",
+    "description": "Toggle theme command"
+  }
+}

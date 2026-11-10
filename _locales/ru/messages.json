@@ -1,0 +1,18 @@
+{
+  "extension_name": {
+    "message": "Панель навигации",
+    "description": "Название расширения"
+  },
+  "extension_description": {
+    "message": "Умная панель навигации для любого сайта: прогресс чтения, заголовки, закладки, автопрокрутка и умное затемнение с учётом собственной тёмной темы сайта.",
+    "description": "Описание расширения"
+  },
+  "cmdTogglePanel": {
+    "message": "Показать / скрыть панель на этом сайте",
+    "description": "Toggle panel command"
+  },
+  "cmdToggleTheme": {
+    "message": "Затемнение на сайте: авто → вкл. → выкл.",
+    "description": "Toggle theme command"
+  }
+}

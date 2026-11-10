@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <title data-i18n="title">Navigasyon Kontrol Paneli</title>
+  <style>
+    :root {
+      --bg: #0e0f13; --side: #12141a; --card: #171a21; --card2: #1d2029; --line: #262a35; --line2: #303544;
+      --text: #e8eaf0; --muted: #9298a8; --faint: #6b7183;
+      --acc: #6366f1; --acc2: #2ec4b6; --acc-soft: rgba(99,102,241,.16); --ok: #22c55e; --warn: #f59e0b;
+      --grad: linear-gradient(135deg, #2ec4b6, #4f46e5);
+      --editor-bg: #0b0c10; --editor-text: #7ee2b8; --shadow: 0 10px 30px rgba(0,0,0,.35);
+      /* eski değişken adları (options.js ve ipucu bunları okuyabilir) */
+      --bg-grup: var(--card2); --border-grup: var(--line); --color-label: var(--muted); --border-input: var(--line2);
+      --bg-input: var(--card2); --input-text: var(--text); --scroll-thumb: #3a3f4f; --balloon-bg: #0b0c10; --balloon-text: #fff; --balloon-accent: #8b8ff8;
+      --tip-border: rgba(255,255,255,.12);
+      color-scheme: dark;
+    }
+    body.panel-light {
+      --bg: #f4f5f9; --side: #ffffff; --card: #ffffff; --card2: #f3f4f8; --line: #e4e6ee; --line2: #d4d7e2;
+      --text: #1b1e27; --muted: #5d6375; --faint: #8a90a2; --acc-soft: rgba(99,102,241,.10);
+      --editor-bg: #f7f8fb; --editor-text: #0f766e; --shadow: 0 10px 30px rgba(20,24,40,.08);
+      --scroll-thumb: #c4c8d4; --balloon-bg: #fff; --balloon-text: #1b1e27; --balloon-accent: #4f46e5; --tip-border: rgba(0,0,0,.12);
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; transition: background-color .3s, color .3s; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+    [hidden] { display: none !important; }
+
+    .app { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
+
+    /* ── Kenar menüsü ── */
+    .side { position: sticky; top: 0; height: 100vh; background: var(--side); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 18px 14px; gap: 18px; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 2px 6px; }
+    .brand img { width: 36px; height: 36px; border-radius: 10px; box-shadow: 0 6px 16px rgba(79,70,229,.35); }
+    .brand b { display: block; font-size: 15px; letter-spacing: -.01em; }
+    .brand small { color: var(--faint); font-size: 11.5px; }
+    .nav { display: flex; flex-direction: column; gap: 2px; }
+    .nav a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; color: var(--muted); text-decoration: none; font-weight: 550; font-size: 13.5px; transition: background .15s, color .15s; }
+    .nav a svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .nav a:hover { background: var(--card2); color: var(--text); }
+    .nav a.on { background: var(--acc-soft); color: var(--text); }
+    .nav a.on svg { color: var(--acc); }
+    .side-foot { margin-top: auto; display: flex; align-items: center; gap: 8px; padding: 0 4px; }
+    .side-foot .select-box { flex: 1; max-width: none; }
+
+    .theme-icon { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line2); display: inline-grid; place-items: center; cursor: pointer; position: relative; color: var(--text); background: var(--card2); flex: none; }
+    .theme-icon svg { width: 18px !important; height: 18px !important; position: absolute; inset: 0; margin: auto; opacity: 0; transform: rotate(-90deg) scale(.4); transition: opacity .35s, transform .35s; }
+    /* Simge şu anki durumu gösterir (panel ve popup ile aynı): Aydınlık = güneş, Karanlık = ay, Sistem = monitör */
+    .theme-icon[data-mode="light"] .t-sun, .theme-icon[data-mode="dark"] .t-moon, .theme-icon[data-mode="system"] .t-system { opacity: 1; transform: none; }
+    .theme-icon:hover { border-color: var(--acc); }
+
+    /* ── İçerik ── */
+    .content { padding: 26px 28px 120px; min-width: 0; max-width: 980px; }
+    .top h1 { margin: 0; font-size: 24px; letter-spacing: -.02em; }
+    .top p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 4px 18px 8px; margin-bottom: 16px; box-shadow: var(--shadow); scroll-margin-top: 16px; }
+    .card > h3 { display: flex; align-items: center; gap: 10px; margin: 0 -18px 4px; padding: 14px 18px 12px; border-bottom: 1px solid var(--line); font-size: 15px; font-weight: 650; letter-spacing: -.005em; color: var(--text); text-transform: none; }
+    .card > h3 .ico { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--acc-soft); color: var(--acc); flex: none; }
+    .card > h3 .ico svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .card > h3 > span:not(.ico) { flex: 1; }
+    .card .sub { margin: 10px 0 2px; font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+
+    .setting-group { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); min-height: 52px; }
+    .setting-group:last-child, .setting-group.last { border-bottom: 0; }
+    .setting-label { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 550; color: var(--text); }
+    .setting-label small { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--muted); line-height: 1.4; }
+    .stack-group { flex-direction: column; align-items: stretch; gap: 8px; }
+    .hint { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .hint b { color: var(--text); }
+
+    .select-box { appearance: none; -webkit-appearance: none; background: var(--card2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239298a8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center; border: 1px solid var(--line2); border-radius: 10px; padding: 8px 34px 8px 12px; font-size: 13px; cursor: pointer; max-width: 240px; flex: none; transition: border-color .15s, box-shadow .15s; }
+    .select-box:hover { border-color: var(--acc); }
+    .select-box:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft); }
+    .select-box option { background: var(--card); color: var(--text); }
+    input[type="number"], input[type="text"] { background: var(--card2); border: 1px solid var(--line2); border-radius: 10px; padding: 8px 10px; font-size: 13px; }
+    input[type="number"] { width: 76px; text-align: center; }
+    input[type="number"]:focus, input[type="text"]:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft); }
+    input[type="color"] { -webkit-appearance: none; appearance: none; width: 44px; height: 32px; padding: 3px; border: 1px solid var(--line2); border-radius: 10px; background: var(--card2); cursor: pointer; flex: none; }
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 7px; }
+    input[type="color"]:disabled { opacity: .35; cursor: not-allowed; }
+    input[type="range"] { accent-color: var(--acc); cursor: pointer; }
+
+    .stepper { display: inline-flex; align-items: center; height: 34px; background: var(--card2); border: 1px solid var(--line2); border-radius: 10px; overflow: hidden; flex: none; }
+    .stepper input[type="number"] { width: 50px; height: 100%; border: 0; border-radius: 0; background: transparent; padding: 0; -moz-appearance: textfield; }
+    .stepper input[type="number"]:focus { box-shadow: none; }
+    .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .step-btn { width: 30px; height: 100%; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 16px; }
+    .step-btn:hover { background: var(--line); color: var(--text); }
+    .step-btn:active { background: var(--acc); color: #fff; }
+
+    .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex: none; cursor: pointer; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; background: var(--line2); border-radius: 24px; transition: .2s; }
+    .slider:before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+    input:checked + .slider { background: var(--acc); }
+    input:checked + .slider:before { transform: translateX(18px); }
+    .switch input:focus-visible + .slider { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+    .reset-btn { width: 26px; height: 26px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--faint); font-size: 13px; cursor: pointer; flex: none; display: grid; place-items: center; opacity: .55; transition: .15s; }
+    .setting-group:hover .reset-btn, .mini-switch:hover .reset-btn, .reset-btn:focus-visible { opacity: 1; border-color: var(--line2); }
+    .reset-btn:hover { background: var(--acc); border-color: var(--acc); color: #fff; opacity: 1; }
+    .reset-btn:disabled, .reset-btn.disabled { opacity: .15; pointer-events: none; }
+    .section-reset-btn { height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; flex: none; }
+    .section-reset-btn:hover { border-color: var(--acc); color: var(--text); }
+
+    .mini-switch { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); cursor: pointer; }
+    .mini-switch input[type="checkbox"] { accent-color: var(--acc); width: 15px; height: 15px; }
+    .mini-switch.disabled { opacity: .45; cursor: not-allowed; }
+    .slider-row { display: grid !important; grid-template-columns: 170px 1fr 52px 26px; align-items: center; gap: 10px; color: var(--text); }
+    .slider-row output { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; text-align: right; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+    .area-master { background: var(--card2); border: 1px solid var(--line2); padding: 7px 12px; border-radius: 9px; cursor: pointer; font-size: 12.5px; font-weight: 600; }
+    .area-master:hover:not(.disabled) { border-color: var(--acc); color: var(--acc); }
+    .area-master.disabled { opacity: .45; cursor: not-allowed; }
+    .inv-color-row { display: flex; flex-wrap: wrap; gap: 10px 18px; padding: 6px 0; }
+    .inv-color-item { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+    .inv-color-item input[type="checkbox"] { accent-color: var(--acc); }
+    .inv-color-item input[type="color"] { width: 34px; height: 26px; }
+    .info { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: 6px; border-radius: 50%; border: 1px solid var(--line2); color: var(--muted); font-size: 10px; font-style: normal; cursor: help; vertical-align: middle; }
+    #infoBalloon { display: none; position: fixed; width: 280px; background: var(--balloon-bg); color: var(--balloon-text); padding: 12px 14px; border-radius: 12px; font-size: 12px; line-height: 1.55; z-index: 9999; box-shadow: 0 14px 40px rgba(0,0,0,.4); border: 1px solid var(--line2); }
+    #infoBalloon b { color: var(--balloon-accent); }
+
+    textarea { width: 100%; min-height: 120px; background: var(--editor-bg); color: var(--editor-text); border: 1px solid var(--line2); border-radius: 12px; padding: 12px; font: 12px/1.55 ui-monospace, SFMono-Regular, "Fira Code", Menlo, monospace; resize: vertical; }
+    textarea:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft); }
+    textarea.sm { min-height: 76px; }
+    textarea[readonly] { color: var(--muted); }
+    .editor-label { display: block; margin: 12px 0 6px; font-size: 12.5px; font-weight: 650; color: var(--text); }
+
+    .btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line2); background: var(--card2); cursor: pointer; font-weight: 600; font-size: 13px; transition: .15s; }
+    .btn-secondary:hover { border-color: var(--acc); color: var(--acc); }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 0 8px; }
+    .btn-row .danger:hover { border-color: #ef4444; color: #ef4444; }
+
+    /* ── Üst çubuk (kaydet) ── */
+    .top { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 16px; margin: -26px -28px 18px; padding: 16px 28px 14px;
+      background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid transparent; transition: border-color .2s; }
+    .top.stuck { border-bottom-color: var(--line); }
+    .top-txt { flex: 1; min-width: 0; }
+    .status { min-height: 18px; color: var(--ok); font-size: 13px; font-weight: 550; text-align: right; max-width: 260px; }
+    #save { flex: none; border: 0; border-radius: 12px; padding: 12px 22px; background: var(--grad); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 10px 24px rgba(79,70,229,.35); transition: transform .15s, filter .15s; }
+    #save:hover { transform: translateY(-1px); filter: brightness(1.08); }
+    #save.dirty { animation: nvpPulse 1.6s ease-in-out infinite; }
+    @keyframes nvpPulse { 50% { box-shadow: 0 0 0 6px rgba(99,102,241,.25), 0 10px 24px rgba(79,70,229,.35); } }
+
+    /* ── Gerçek panel (ayarlar sayfasının kendisinde) ── */
+    #navPreview { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; }
+
+    .content, .side { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+
+    @media (max-width: 760px) {
+      .app { grid-template-columns: 1fr; }
+      .side { position: sticky; top: 0; z-index: 40; height: auto; flex-direction: row; align-items: center; padding: 10px 12px; gap: 10px; overflow-x: auto; }
+      .brand small, .brand b { display: none; }
+      .nav { flex-direction: row; }
+      .nav a { white-space: nowrap; padding: 8px 10px; }
+      .side-foot { margin: 0; }
+      .side-foot .select-box { display: none; }
+      .content { padding-left: 16px; padding-right: 16px; }
+      .top { top: 56px; margin: -26px -16px 16px; padding: 12px 16px; flex-wrap: wrap; }
+      .top-txt p, .status { display: none; }
+      .setting-group { flex-wrap: wrap; }
+      .slider-row { grid-template-columns: 1fr 52px 26px; }
+      .slider-row > span { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body class="panel-dark">
+<div class="app">
+
+  <!-- ═════════ Kenar menüsü ═════════ -->
+  <aside class="side">
+    <div class="brand"><img src="icons/icon48.png" alt=""><div><b data-i18n="brandName">Navigasyon</b><small id="verLabel">v5.0</small></div></div>
+    <nav class="nav" id="sideNav">
+      <a href="#sec-panel" class="on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 15l4-4 4 4"/></svg><span data-i18n="navPanel">Panel</span></a>
+      <a href="#sec-look"><svg viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7H16a6 6 0 0 0 6-6c0-4.4-4.5-8.4-10-8.4z"/></svg><span data-i18n="navLook">Görünüm</span></a>
+      <a href="#sec-dark"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span data-i18n="navDark">Karartma</span></a>
+      <a href="#sec-darkpro"><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg><span data-i18n="navDarkPro">Gelişmiş karartma</span></a>
+      <a href="#sec-sites"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg><span data-i18n="navSites">Site kuralları</span></a>
+      <a href="#sec-dev"><svg viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg><span data-i18n="navDev">Geliştirici</span></a>
+      <a href="#sec-backup"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span data-i18n="navBackup">Yedek</span></a>
+    </nav>
+    <div class="side-foot">
+      <select id="language" class="select-box" aria-label="Dil">
+        <option value="tr">Türkçe</option>
+        <option value="en">English</option>
+        <option value="ru">Русский</option>
+      </select>
+      <span class="theme-icon" tabindex="0" role="button" data-i18n-title="themeTransition">
+        <svg class="t-sun" viewBox="0 0 24 24" fill="none" stroke="#f5b301" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" fill="#f5b301" stroke="none"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="t-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+        <svg class="t-system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      </span>
+    </div>
+  </aside>
+
+  <!-- ═════════ Ayarlar ═════════ -->
+  <main class="content">
+    <div class="top">
+      <div class="top-txt"><h1 data-i18n="heading">Ayarlar</h1><p data-i18n="headingSub">Sağ alttaki panel gerçek paneldir: yaptığın her değişiklik onda anında görünür.</p></div>
+      <div id="status" class="status" role="status"></div>
+      <button id="save" data-i18n="save">Değişiklikleri kaydet</button>
+    </div>
+
+    <!-- Panel -->
+    <section class="card" id="sec-panel">
+      <h3><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 15l4-4 4 4"/></svg></span><span data-i18n="activeInactive">Düğmeler</span><button type="button" class="section-reset-btn" data-section="active" data-i18n-title="resetSection">↺</button></h3>
+      <div class="setting-group"><label class="setting-label" data-i18n="themeLabel">Karartma düğmesi</label><label class="switch"><input type="checkbox" id="showThemeButton" checked><span class="slider"></span></label><button class="reset-btn" data-setting="showThemeButton" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label" data-i18n="pageLabel">Sayfa yukarı / aşağı</label><label class="switch"><input type="checkbox" id="showPageButton" checked><span class="slider"></span></label><button class="reset-btn" data-setting="showPageButton" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label" data-i18n="edgeLabel">En üst / en alt</label><label class="switch"><input type="checkbox" id="showEdgeButton" checked><span class="slider"></span></label><button class="reset-btn" data-setting="showEdgeButton" data-i18n-title="reset">↺</button></div>
+    </section>
+
+    <section class="card">
+      <h3><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></span><span data-i18n="positionShortcuts">Konum ve davranış</span><button type="button" class="section-reset-btn" data-section="position" data-i18n-title="resetSection">↺</button></h3>
+      <div class="setting-group"><label class="setting-label" data-i18n="panelPosition">Panel konumu</label>
+        <select id="position" class="select-box">
+          <option value="right-bottom" data-i18n="posBottomRight">Sağ alt</option>
+          <option value="left-bottom" data-i18n="posBottomLeft">Sol alt</option>
+          <option value="right-top" data-i18n="posTopRight">Sağ üst</option>
+          <option value="left-top" data-i18n="posTopLeft">Sol üst</option>
+        </select><button class="reset-btn" data-setting="position" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="panelStyleLabel">Panel düzeni</span><small data-i18n="panelStyleHint">Kompakt: tek akıllı düğme, üzerine gelince açılır</small></label>
+        <select id="panelStyle" class="select-box"><option value="compact" data-i18n="psCompact">Kompakt</option><option value="full" data-i18n="psFull">Tam (hep açık)</option></select><button class="reset-btn" data-setting="panelStyle" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="keyboardShortcuts">Klavye kısayolları</span><small id="keyboardHint">Alt + ↑/↓ sayfa • Ctrl + Alt + ↑/↓ uç</small></label><label class="switch"><input type="checkbox" id="keyboardShortcuts" checked><span class="slider"></span></label><button class="reset-btn" data-setting="keyboardShortcuts" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="autoHide">Otomatik gizlenme</span><small data-i18n="autoHideHint">Aşağı kaydırırken saydamlaşır</small></label><label class="switch"><input type="checkbox" id="autoHide" checked><span class="slider"></span></label><button class="reset-btn" data-setting="autoHide" data-i18n-title="reset">↺</button></div>
+      <div id="autoHideDelayGroup" class="setting-group" style="display:none;"><label class="setting-label" data-i18n="autoHideDelay">Kapanma gecikmesi (ms)</label><input type="number" id="autoHideDelay" value="600" min="100" max="5000"><button class="reset-btn" data-setting="autoHideDelay" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="rememberPosition">Kaydırma konumunu hatırla</span><small data-i18n="rememberPositionHint">Sayfaya dönünce kaldığın yerden devam et</small></label><label class="switch"><input type="checkbox" id="rememberPosition" checked><span class="slider"></span></label><button class="reset-btn" data-setting="rememberPosition" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="gestures">Yer imleri</span><small data-i18n="gesturesHint">Sayfada Alt+tıklama ile yer imi ekle</small></label><label class="switch"><input type="checkbox" id="gestures" checked><span class="slider"></span></label><button class="reset-btn" data-setting="gestures" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="detectConflicts">Çakışma algıla</span><small data-i18n="detectConflictsHint">Sitenin kendi "yukarı çık" düğmesi varsa bizimkini gizle</small></label><label class="switch"><input type="checkbox" id="detectConflicts" checked><span class="slider"></span></label><button class="reset-btn" data-setting="detectConflicts" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="readingProgress">Okuma ilerlemesi</span><small data-i18n="readingProgressHint">Düğmede ilerleme halkası ve kalan okuma süresi</small></label><label class="switch"><input type="checkbox" id="readingProgress" checked><span class="slider"></span></label><button class="reset-btn" data-setting="readingProgress" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="autoScrollSpeed">Otomatik kaydırma hızı (px/sn)</span><small data-i18n="autoScrollSpeedHint">Alt+S başlat/durdur · + / − hız · Esc durdurur</small></label><input type="number" id="autoScrollSpeed" value="40" min="10" max="400" step="10"><button class="reset-btn" data-setting="autoScrollSpeed" data-i18n-title="reset">↺</button></div>
+    </section>
+
+    <!-- Görünüm -->
+    <section class="card" id="sec-look">
+      <h3><span class="ico"><svg viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1 0 1.7-.8 1.7-1.7 0-.9-.8-1.3-.8-2.2 0-.9.8-1.7 1.7-1.7H16a6 6 0 0 0 6-6c0-4.4-4.5-8.4-10-8.4z"/></svg></span><span data-i18n="visualStyle">Görünüm</span><button type="button" class="section-reset-btn" data-section="visual" data-i18n-title="resetSection">↺</button></h3>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="panelThemeLabel">Panel görünümü</span><small data-i18n="panelThemeHint">Otomatik: panel, altındaki sayfanın rengine uyar</small></label>
+        <select id="panelTheme" class="select-box"><option value="auto" data-i18n="ptAuto">Sayfaya uy (otomatik)</option><option value="dark" data-i18n="ptDark">Koyu</option><option value="light" data-i18n="ptLight">Açık</option></select><button class="reset-btn" data-setting="panelTheme" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label" data-i18n="hoverColor">Vurgu rengi</label><input type="color" id="hoverColor" value="#37a8a8"><button class="reset-btn" data-setting="hoverColor" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label" data-i18n="backgroundColor">Koyu panel zemini</label><input type="color" id="bgColorHex" value="#1e1e24"><button class="reset-btn" data-setting="bgColorHex" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group" hidden><label class="setting-label" data-i18n="buttonColor">Düğme rengi</label><input type="color" id="buttonColor" value="#2d2d37"><button class="reset-btn" data-setting="buttonColor" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label" data-i18n="arrowColor">Koyu panelde ikon rengi</label><input type="color" id="arrowColor" value="#ffffff"><button class="reset-btn" data-setting="arrowColor" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label" data-i18n="buttonSize">Düğme boyutu (px)</label><div class="stepper"><button type="button" class="step-btn" data-target="buttonSize" data-step="-2" data-i18n-aria="decrease">−</button><input type="number" id="buttonSize" value="36" min="26" max="64"><button type="button" class="step-btn" data-target="buttonSize" data-step="2" data-i18n-aria="increase">+</button></div><button class="reset-btn" data-setting="buttonSize" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label" data-i18n="buttonRadius">Köşe yuvarlaklığı (px)</label><div class="stepper"><button type="button" class="step-btn" data-target="buttonRadius" data-step="-1" data-i18n-aria="decrease">−</button><input type="number" id="buttonRadius" value="12" min="0" max="32"><button type="button" class="step-btn" data-target="buttonRadius" data-step="1" data-i18n-aria="increase">+</button></div><button class="reset-btn" data-setting="buttonRadius" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label" data-i18n="fromRight">Yan kenar boşluğu (px)</label><div class="stepper"><button type="button" class="step-btn" data-target="offsetRight" data-step="-2" data-i18n-aria="decrease">−</button><input type="number" id="offsetRight" value="24"><button type="button" class="step-btn" data-target="offsetRight" data-step="2" data-i18n-aria="increase">+</button></div><button class="reset-btn" data-setting="offsetRight" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label" data-i18n="fromBottom">Dikey kenar boşluğu (px)</label><div class="stepper"><button type="button" class="step-btn" data-target="offsetBottom" data-step="-2" data-i18n-aria="decrease">−</button><input type="number" id="offsetBottom" value="24"><button type="button" class="step-btn" data-target="offsetBottom" data-step="2" data-i18n-aria="increase">+</button></div><button class="reset-btn" data-setting="offsetBottom" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="balloonThemeLabel">Balon (popup) teması</span><small data-i18n="balloonThemeHint">Eklenti balonunun kendi teması</small></label><span class="theme-icon" id="balloonThemeIcon" tabindex="0" role="button" data-i18n-title="balloonTheme">
+        <svg class="t-sun" viewBox="0 0 24 24" fill="none" stroke="#f5b301" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" fill="#f5b301" stroke="none"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="t-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+        <svg class="t-system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      </span><button class="reset-btn" data-setting="balloonMode" data-i18n-title="reset">↺</button></div>
+    </section>
+
+    <!-- Karartma -->
+    <section class="card" id="sec-dark">
+      <h3><span class="ico"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></span><span data-i18n="darkMode">Karartma</span><button type="button" class="section-reset-btn" data-section="dark" data-i18n-title="resetSection">↺</button></h3>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="pageDarkLabel">Sayfa karartma</span><small data-i18n="pageDarkHint">Otomatik: yalnız sistem karanlıkken ve site açık renkliyse; sitenin kendi karanlık modu varsa dokunmaz</small></label>
+        <select id="pageDark" class="select-box"><option value="never" data-i18n="pdNever">Aydınlık (hiç karartma)</option><option value="always" data-i18n="pdAlways">Karanlık (her zaman karart)</option><option value="auto" data-i18n="pdAuto">Sistem (akıllı)</option></select><button class="reset-btn" data-setting="pageDark" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="darkModeMethod">Yöntem</span><span class="info" tabindex="0" data-i18n-balloon="infoMethod">i</span></label>
+        <select id="darkModeMethod" class="select-box"><option value="smart" data-i18n="methodSmart">Akıllı boyama (renkli öğelere dokunmaz)</option><option value="invert" data-i18n="methodInvert">Ters çevirme (renkler korunur)</option><option value="theme" data-i18n="methodTheme">Kendi temamızı uygula</option></select><button class="reset-btn" data-setting="darkModeMethod" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group stack-group">
+        <label class="setting-label"><span data-i18n="smartThreshold">Açık kalan alanları yakala</span><small data-i18n="smartThresholdHint">Akıllı boyamadan sonra ekranda bu açıklığın üstünde kalan yerlere koyu örtü uygulanır.</small></label>
+        <label class="mini-switch slider-row"><span>40% ↔ 95%</span><input type="range" id="smartThreshold" min="40" max="95" step="5" value="45"><output id="smartThresholdOut">%45</output><button type="button" class="reset-btn" data-setting="smartThreshold" data-i18n-title="reset">↺</button></label>
+      </div>
+
+      <div class="setting-group stack-group">
+        <label class="setting-label"><span data-i18n="invertSettings">Ters çevirme ayarları</span><small data-i18n="invertSettingsHint">Yalnızca "Ters çevirme" yönteminde geçerli</small></label>
+        <label class="mini-switch slider-row"><span data-i18n="invertIntensity">Şiddet</span><input type="range" id="invertIntensity" min="0" max="100" value="100"><output id="invIntensityOut">100%</output><button type="button" class="reset-btn" data-setting="invertIntensity" data-i18n-title="reset">↺</button></label>
+        <label class="mini-switch slider-row"><span data-i18n="invertBrightness">Parlaklık</span><input type="range" id="invertBrightness" min="40" max="160" value="100"><output id="invBrightnessOut">100%</output><button type="button" class="reset-btn" data-setting="invertBrightness" data-i18n-title="reset">↺</button></label>
+        <label class="mini-switch slider-row"><span data-i18n="invertContrast">Kontrast</span><input type="range" id="invertContrast" min="60" max="140" value="100"><output id="invContrastOut">100%</output><button type="button" class="reset-btn" data-setting="invertContrast" data-i18n-title="reset">↺</button></label>
+        <label class="mini-switch slider-row"><span data-i18n="invertGrayscale">Gri tonlama</span><input type="range" id="invertGrayscale" min="0" max="100" value="0"><output id="invGrayscaleOut">0%</output><button type="button" class="reset-btn" data-setting="invertGrayscale" data-i18n-title="reset">↺</button></label>
+        <label class="mini-switch slider-row"><span data-i18n="invertWarmth">Sıcak ton</span><input type="range" id="invertWarmth" min="0" max="100" value="0"><output id="invWarmthOut">0%</output><button type="button" class="reset-btn" data-setting="invertWarmth" data-i18n-title="reset">↺</button></label>
+        <label class="mini-switch slider-row" hidden><span data-i18n="colorPreserve">Renk koruma</span><input type="range" id="colorPreserve" min="0" max="100" value="25"><output id="invColorPreserveOut">0%</output><button type="button" class="reset-btn" data-setting="colorPreserve" data-i18n-title="reset">↺</button></label>
+        <small hidden data-i18n="colorPreserveHint"></small>
+      </div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="invertImageMode">Görseller</span></label>
+        <select id="invertImageMode" class="select-box"><option value="original" data-i18n="invImgOriginal">Renkli kalsın</option><option value="invert" data-i18n="invImgInvert">Sayfayla birlikte çevrilsin</option><option value="grayscale" data-i18n="invImgGrayscale">Gri tonlansın</option></select><button class="reset-btn" data-setting="invertImageMode" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="invertDim">Yalnız koyulaştır (renkleri ters çevirme)</span></label><label class="switch"><input type="checkbox" id="invertDim"><span class="slider"></span></label><button class="reset-btn" data-setting="invertDim" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group stack-group" hidden>
+        <div class="chips">
+          <label class="mini-switch"><input type="checkbox" id="invAreaLink"> <span data-i18n="link">Bağlantı</span></label>
+          <label class="mini-switch"><input type="checkbox" id="invAreaImage"> <span data-i18n="image">Görseller</span></label>
+          <label class="mini-switch"><input type="checkbox" id="invAreaButton"> <span data-i18n="button">Buton</span></label>
+          <label class="mini-switch"><input type="checkbox" id="invAreaForm"> <span data-i18n="form">Form</span></label>
+          <label class="mini-switch"><input type="checkbox" id="invAreaCode"> <span data-i18n="code">Kod</span></label>
+          <label class="mini-switch"><input type="checkbox" id="invAreaTable"> <span data-i18n="table">Tablo</span></label>
+          <button type="button" class="reset-btn" data-setting="invertAreas" data-i18n-title="reset">↺</button>
+        </div>
+      </div>
+      <div class="setting-group stack-group">
+        <label class="setting-label"><span data-i18n="invertAreas">"Kendi temamız" yönteminde boyanacak alanlar</span><small data-i18n="areaHint">Yalnızca "Kendi temamızı uygula" yönteminde geçerli</small></label>
+        <div class="chips">
+          <label class="mini-switch"><input type="checkbox" class="area-check" id="darkAreaBody" checked> <span data-i18n="body">Gövde</span></label>
+          <label class="mini-switch"><input type="checkbox" class="area-check" id="darkAreaText"> <span data-i18n="text">Yazı</span></label>
+          <label class="mini-switch"><input type="checkbox" class="area-check" id="darkAreaLink"> <span data-i18n="link">Bağlantı</span></label>
+          <label class="mini-switch"><input type="checkbox" class="area-check" id="darkAreaButton"> <span data-i18n="button">Buton</span></label>
+          <label class="mini-switch"><input type="checkbox" class="area-check" id="darkAreaImage"> <span data-i18n="image">Görseller</span></label>
+          <label class="mini-switch"><input type="checkbox" class="area-check" id="darkAreaForm"> <span data-i18n="form">Form alanları</span></label>
+          <label class="mini-switch"><input type="checkbox" class="area-check" id="darkAreaCode"> <span data-i18n="code">Kod blokları</span></label>
+          <label class="mini-switch"><input type="checkbox" class="area-check" id="darkAreaTable"> <span data-i18n="table">Tablolar</span></label>
+          <label class="mini-switch"><input type="checkbox" class="area-check" id="darkAreaScrollbar"> <span data-i18n="scrollbar">Kaydırma çubuğu</span></label>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button type="button" id="areaSelectAll" class="area-master" data-i18n="areaSelectAll">Hepsini aç</button>
+          <button type="button" id="areaClearAll" class="area-master" data-i18n="areaClearAll">Hepsini kapat</button>
+          <span style="flex:1"></span>
+          <button type="button" class="reset-btn" data-setting="darkModeAreas" data-i18n-title="reset">↺</button>
+        </div>
+      </div>
+      <div class="setting-group stack-group last">
+        <label class="setting-label"><span data-i18n="exclude">Karartılmayacak öğeler (CSS seçici)</span><small data-i18n-html="excludeHint">Virgül ya da satırla ayır. Örn: <b>.ad, #banner, img.logo</b></small></label>
+        <textarea id="excludeCssArea" class="sm" spellcheck="false"></textarea>
+        <div class="chips">
+          <button type="button" class="area-master" data-exclude="iframe" data-i18n="excludeIframe">+ iframe</button>
+          <button type="button" class="area-master" data-exclude="images" data-i18n="excludeImages">+ Görseller</button>
+          <button type="button" class="area-master" data-exclude="bgimg" data-i18n="excludeBgImg">+ Arka plan görselleri</button>
+          <button type="button" class="area-master" data-exclude="map" data-i18n="excludeMap">+ Harita</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gelişmiş karartma -->
+    <section class="card" id="sec-darkpro">
+      <h3><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span><span data-i18n="darkAdvanced">Gelişmiş karartma</span><button type="button" class="section-reset-btn" data-section="darkAdvanced" data-i18n-title="resetSection">↺</button></h3>
+      <div class="setting-group" hidden><label class="setting-label" data-i18n="darkAutoDetect">Otomatik algıla</label><label class="switch"><input type="checkbox" id="darkAutoDetect" checked><span class="slider"></span></label><button class="reset-btn" data-setting="darkAutoDetect" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="darkSchedule">Zamanlama</span><small data-i18n="darkScheduleHint">Yalnız belirli saatlerde karart</small></label><label class="switch"><input type="checkbox" id="darkSchedule"><span class="slider"></span></label><button class="reset-btn" data-setting="darkSchedule" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group" id="darkScheduleTimes" style="display:none;">
+        <label class="setting-label"><span data-i18n="scheduleStart">Başlangıç</span></label>
+        <input type="number" id="darkScheduleStartH" min="0" max="23" value="20"> : <input type="number" id="darkScheduleStartM" min="0" max="59" value="0">
+        <label class="setting-label" style="flex:none; margin-left:10px;"><span data-i18n="scheduleEnd">Bitiş</span></label>
+        <input type="number" id="darkScheduleEndH" min="0" max="23" value="7"> : <input type="number" id="darkScheduleEndM" min="0" max="59" value="0">
+      </div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="darkTransition">Geçiş süresi (ms)</span><small data-i18n="darkTransitionHint">Karartma açılırken animasyon süresi</small></label><div class="stepper"><button type="button" class="step-btn" data-target="darkTransition" data-step="-50">−</button><input type="number" id="darkTransition" value="300" min="0" max="2000" step="50"><button type="button" class="step-btn" data-target="darkTransition" data-step="50">+</button></div><button class="reset-btn" data-setting="darkTransition" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="darkFontSize">Yazı büyütme (%)</span><small data-i18n="darkFontSizeHint">Karartılmış sayfada yazıyı büyüt</small></label><div class="stepper"><button type="button" class="step-btn" data-target="darkFontSize" data-step="-5">−</button><input type="number" id="darkFontSize" value="0" min="0" max="50" step="5"><button type="button" class="step-btn" data-target="darkFontSize" data-step="5">+</button></div><button class="reset-btn" data-setting="darkFontSize" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="darkFontWeight">Yazı kalınlığı</span><small data-i18n="darkFontWeightHint">0 = sayfanın kendi kalınlığı</small></label><div class="stepper"><button type="button" class="step-btn" data-target="darkFontWeight" data-step="-100">−</button><input type="number" id="darkFontWeight" value="0" min="0" max="900" step="100"><button type="button" class="step-btn" data-target="darkFontWeight" data-step="100">+</button></div><button class="reset-btn" data-setting="darkFontWeight" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="darkSaturate">Doygunluk (%)</span><small data-i18n="darkSaturateHint">Renk canlılığı</small></label><div class="stepper"><button type="button" class="step-btn" data-target="darkSaturate" data-step="-10">−</button><input type="number" id="darkSaturate" value="100" min="0" max="200" step="10"><button type="button" class="step-btn" data-target="darkSaturate" data-step="10">+</button></div><button class="reset-btn" data-setting="darkSaturate" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="darkHueRotate">Renk döndürme (°)</span><small data-i18n="darkHueRotateHint">Tüm renkleri döndür</small></label><div class="stepper"><button type="button" class="step-btn" data-target="darkHueRotate" data-step="-15">−</button><input type="number" id="darkHueRotate" value="0" min="0" max="360" step="15"><button type="button" class="step-btn" data-target="darkHueRotate" data-step="15">+</button></div><button class="reset-btn" data-setting="darkHueRotate" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group" hidden><label class="setting-label" data-i18n="darkScrollOpt">Kaydırma optimizasyonu</label><label class="switch"><input type="checkbox" id="darkScrollOpt"><span class="slider"></span></label><button class="reset-btn" data-setting="darkScrollOpt" data-i18n-title="reset">↺</button></div>
+
+      <p class="sub" data-i18n="overlaySettings">Karartılmış sayfaya ek renkler</p>
+      <div class="setting-group stack-group">
+        <div style="display:flex; align-items:center; gap:10px;"><span class="hint" style="flex:1" data-i18n="overlayHint">Bu renkler karartılmış sayfanın üstüne uygulanır.</span><button type="button" class="reset-btn" data-setting="invertColors" data-i18n-title="reset">↺</button></div>
+        <div class="inv-color-row">
+          <label class="inv-color-item"><input type="checkbox" id="invOverrideText" data-i18n-title="enable"><span data-i18n="invTextOverride">Yazı</span><input type="color" id="invTextColor" value="#e1e1e6" disabled></label>
+          <label class="inv-color-item"><input type="checkbox" id="invOverrideLink" data-i18n-title="enable"><span data-i18n="invLinkOverride">Bağlantı</span><input type="color" id="invLinkColor" value="#4dabf7" disabled></label>
+          <label class="inv-color-item"><input type="checkbox" id="invOverrideBg" data-i18n-title="enable"><span data-i18n="invBgOverride">Arka plan</span><input type="color" id="invBgColor" value="#121214" disabled></label>
+          <label class="inv-color-item"><input type="checkbox" id="overlayHeadingColor"><span data-i18n="overlayHeadingColor">Başlıklar</span><input type="color" id="overlayHeadingColorHex" value="#e0e0e0" disabled></label>
+          <label class="inv-color-item"><input type="checkbox" id="overlayBoldColor"><span data-i18n="overlayBoldColor">Kalın yazı</span><input type="color" id="overlayBoldColorHex" value="#e0e0e0" disabled></label>
+          <label class="inv-color-item"><input type="checkbox" id="overlaySvgColor"><span data-i18n="overlaySvgColor">İkonlar</span><input type="color" id="overlaySvgColorHex" value="#e1e1e6" disabled></label>
+          <label class="inv-color-item"><input type="checkbox" id="overlayGrayscale"><span data-i18n="overlayGrayscale">Gri görselleri koru</span></label>
+        </div>
+      </div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="overlayLineHeight">Satır yüksekliği</span><small data-i18n="overlayLineHeightHint">Boş = sayfanın kendisi. Örn: 1.6</small></label><input type="number" id="overlayLineHeight" min="0.5" max="3" step="0.1" placeholder="—"><button type="button" class="reset-btn" data-setting="overlayLineHeight" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="overlayLetterSpacing">Harf aralığı (px)</span><small data-i18n="overlayLetterSpacingHint">Boş = sayfanın kendisi</small></label><input type="number" id="overlayLetterSpacing" min="-2" max="10" step="0.1" placeholder="—"><button type="button" class="reset-btn" data-setting="overlayLetterSpacing" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group"><label class="setting-label"><span data-i18n="overlayTextShadow">Yazı gölgesi</span><small data-i18n="overlayTextShadowHint">CSS text-shadow değeri</small></label><input type="text" id="overlayTextShadow" placeholder="0 1px 3px rgba(0,0,0,.5)" style="width:220px"><button type="button" class="reset-btn" data-setting="overlayTextShadow" data-i18n-title="reset">↺</button></div>
+      <div class="setting-group last"><label class="setting-label"><span data-i18n="overlayFontFamily">Yazı tipi</span><small data-i18n="overlayFontFamilyHint">Boş = sayfanın kendi yazı tipi</small></label><input type="text" id="overlayFontFamily" placeholder="system-ui, sans-serif" style="width:220px"><button type="button" class="reset-btn" data-setting="overlayFontFamily" data-i18n-title="reset">↺</button></div>
+    </section>
+
+    <!-- Site kuralları -->
+    <section class="card" id="sec-sites">
+      <h3><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg></span><span data-i18n="siteRules">Site kuralları</span><button type="button" class="section-reset-btn" data-section="siteRules" data-i18n-title="resetSection">↺</button></h3>
+      <div class="setting-group stack-group">
+        <label class="setting-label"><span data-i18n="siteRulesHeading">Belirli sitelerde paneli gizle / zorla göster</span><small data-i18n-html="siteRuleHint">Her satıra bir site. <b>-</b> panel gizlenir, <b>+</b> zorla gösterilir. Örn: - example.com</small></label>
+        <textarea id="rulesArea" class="sm" spellcheck="false"></textarea>
+      </div>
+      <div class="setting-group stack-group last">
+        <label class="setting-label"><span data-i18n="pausedSitesTitle">Duraklatılmış siteler</span><small data-i18n-html="pausedSitesHint">Bu sitelerde eklenti çalışmaz. Popup'taki <b>"Bu sitede çalışsın"</b> anahtarıyla eklenir.</small></label>
+        <textarea id="pausedSitesArea" class="sm" spellcheck="false" readonly></textarea>
+        <div><button id="clearPausedSites" class="btn-secondary" data-i18n="clearAll">Tümünü temizle</button></div>
+      </div>
+    </section>
+
+    <!-- Geliştirici -->
+    <section class="card" id="sec-dev">
+      <h3><span class="ico"><svg viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg></span><span data-i18n="studio">Geliştirici</span></h3>
+      <span class="editor-label" data-i18n="cssLabel">Özel CSS (panele uygulanır)</span>
+      <textarea id="cssArea" spellcheck="false" placeholder=".nav-button { border-radius: 50% !important; }" data-i18n-ph="cssPlaceholder"></textarea>
+      <span class="editor-label" data-i18n="htmlLabel">Özel HTML düğme şablonu</span>
+      <textarea id="htmlArea" spellcheck="false" placeholder="Boş bırakırsan standart düğmeler kullanılır." data-i18n-ph="htmlPlaceholder"></textarea>
+      <span class="editor-label" data-i18n="jsonLabel">Tüm ayarlar (JSON)</span>
+      <textarea id="jsonArea" spellcheck="false" style="min-height:180px"></textarea>
+      <p class="hint" style="margin:8px 0 10px" data-i18n="devHint">Tema Stüdyosu'nun "Navigasyon Eklentisi" sekmesindeki HTML ve CSS'i buradaki alanlara yapıştırabilirsin.</p>
+    </section>
+
+    <!-- Yedek -->
+    <section class="card" id="sec-backup">
+      <h3><span class="ico"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></span><span data-i18n="navBackup">Yedek</span></h3>
+      <div class="btn-row">
+        <button id="exportBtn" class="btn-secondary" data-i18n="exportBtn">Ayarları dışa aktar</button>
+        <button id="importBtn" class="btn-secondary" data-i18n="importBtn">Ayarları içe aktar</button>
+        <button id="reset" class="btn-secondary danger" data-i18n="resetAllBtn">Tüm ayarları varsayılana döndür</button>
+        <input type="file" id="importFile" accept=".json" style="display:none;">
+      </div>
+    </section>
+  </main>
+
+</div>
+
+<div id="navPreview" data-i18n-aria="preview"></div>
+
+<div id="infoBalloon"></div>
+
+<script src="shared.js"></script>
+<script src="options.js"></script>
+</body>
+</html>
