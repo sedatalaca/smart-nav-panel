@@ -1,4 +1,4 @@
-// Smart Nav Panel — Copyright (C) 2026 Sedat Alaca (LikaPulse) — LikaGroup
+// Smart Nav Panel — Copyright (C) 2026 LikaGroup (Sedat Alaca-LikaPulse)
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Arka plan service worker: klavye komutları, sekme rozeti, ayar göçü,
 // kurulum/güncellemede açık sekmelere betik enjeksiyonu.

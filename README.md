@@ -59,7 +59,7 @@ bozmayan akıllı karartma.
 
 ## Lisans
 
-Copyright © 2026 Sedat Alaca (LikaPulse) — LikaGroup
+Copyright © 2026 LikaGroup (Sedat Alaca-LikaPulse)
 
 Bu program özgür yazılımdır: **GNU Genel Kamu Lisansı sürüm 3** (GPL-3.0-or-later) koşulları altında
 yeniden dağıtabilir ve/veya değiştirebilirsiniz. Değiştirilmiş sürümlerin de aynı lisansla açık
@@ -72,4 +72,4 @@ kaynak olarak dağıtılması ve özgün yazarın belirtilmesi gerekir. Ayrınt�
 **Smart Nav Panel** is a Chrome extension that adds a compact, design-aware navigation panel to every
 site: reading progress, heading navigator, bookmarks, auto-scroll and a smart dark mode that paints
 only light surfaces and respects a site's own dark theme. Load it unpacked from `chrome://extensions`
-(Developer mode → Load unpacked). Licensed under GPL-3.0-or-later. Copyright © 2026 Sedat Alaca (LikaPulse) — LikaGroup.
+(Developer mode → Load unpacked). Licensed under GPL-3.0-or-later. Copyright © 2026 LikaGroup (Sedat Alaca-LikaPulse).

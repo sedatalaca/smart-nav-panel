@@ -3,7 +3,7 @@
   "name": "__MSG_extension_name__",
   "version": "5.1",
   "description": "__MSG_extension_description__",
-  "author": "Sedat Alaca (LikaPulse) — LikaGroup",
+  "author": "LikaGroup (Sedat Alaca-LikaPulse)",
   "homepage_url": "https://github.com/sedatalaca/smart-nav-panel",
   "default_locale": "en",
   "permissions": [

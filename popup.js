@@ -1,4 +1,4 @@
-// Smart Nav Panel — Copyright (C) 2026 Sedat Alaca (LikaPulse) — LikaGroup
+// Smart Nav Panel — Copyright (C) 2026 LikaGroup (Sedat Alaca-LikaPulse)
 // SPDX-License-Identifier: GPL-3.0-or-later
 // popup.js — Navigasyon v5 eklenti balonu
 'use strict';
