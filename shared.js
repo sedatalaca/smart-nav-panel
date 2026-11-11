@@ -451,8 +451,9 @@
     #nvp.theme-dark{--glass:rgba(${darkBg.join(',')},.84);--fg:${icon};--line:rgba(255,255,255,.12);--track:rgba(255,255,255,.16);--hover:rgba(255,255,255,.09);--shadow:0 10px 30px rgba(0,0,0,.45)}
     #nvp.theme-light{--glass:rgba(255,255,255,.9);--fg:#1f2329;--line:rgba(15,23,42,.12);--track:rgba(15,23,42,.10);--hover:rgba(15,23,42,.06);--shadow:0 10px 28px rgba(15,23,42,.18)}
     #nvp.hidden{opacity:0;transform:translateY(14px) scale(.9);pointer-events:none}
-    #nvp.rest:not(.open):not(:hover){opacity:.38}
-    #nvp.attop:not(.open):not(:hover){opacity:.62}
+    #nvp.rest:not(.open):not(:hover):not(.hidden){opacity:.38}
+    #nvp.attop:not(.open):not(:hover):not(.hidden){opacity:.62}
+    #nvp.short:not(.open):not(:hover):not(.hidden){opacity:.45}
     #nvp.dragging{transition:none}
     .fab{appearance:none;margin:0;padding:0;border:1px solid var(--line);width:${fabSize}px;height:${fabSize}px;border-radius:50%;
       background:var(--glass);color:var(--fg);box-shadow:var(--shadow);cursor:pointer;position:relative;display:grid;place-items:center;

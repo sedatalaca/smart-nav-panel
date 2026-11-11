@@ -1,25 +1,29 @@
 # Yapılacaklar
 
-Akıllı boyama (karanlık mod) için not edilen iyileştirmeler. Henüz uygulanmadı.
+Planlanan ve tamamlanan iyileştirmeler.
 
-## 1. Açık mavi ve sarı tonlara da örtü
-Şu an renkli düz zeminler yalnız çok açık (pastel, bağıl parlaklık %70 üstü) ve büyükse örtülüyor.
-Mavi ve sarı tonlarda belli bir açıklığa kadar olan zeminlere de koyu örtü uygulanacak
-(ör. açık mavi bilgi kutuları, sarı uyarı şeritleri). Doygun, orta tonlu düğmeler yine korunacak.
-Ton aralığı ve eşik ayarlardan seçilebilir olabilir.
+## Bekleyenler
 
-## 2. Gömülü video açılınca arka plan
-Sayfada bir video penceresi (ör. YouTube gömmesi, ışık kutusu / modal) açıldığında arkada kalan
-koyu yarı saydam örtü, akıllı boyama tarafından "açık alan" sanılıp geri çevrilmeye çalışılıyor.
-Zaten koyu olan bu tür örtüler (modal arka planı, `backdrop`, yarı saydam siyah katmanlar) tanınıp
-olduğu gibi bırakılacak.
+### 1. "Bu sitede çalışsın" varsayılan olarak kapalı gelsin
+Popup'taki **"Bu sitede çalışsın — Panel, kısayollar ve karartma"** anahtarı web sitelerinde
+varsayılan olarak açık gelmeyecek. Eklenti bir sitede ancak kullanıcı bu anahtarı açınca çalışacak
+(panel, klavye kısayolları ve karartma). Şu an `enableAllSites` varsayılanı `true`
+(content.js, options.js, popup.js); `false` yapılıp ayarlar sayfasında "Tüm sitelerde çalışsın"
+seçeneği isteğe bağlı bırakılacak. Mevcut kullanıcıların kayıtlı tercihi bozulmamalı.
 
-## 3. Kartlarda üzerine gelince ışık efekti
-Bazı sitelerde kartların üzerine gelince arkasında hafif bir ışık hüzmesi / parlama (gölge, kenar
-parlaması) oluşuyor ve kart daha iyi ayırt ediliyor. Akıllı boyamada koyulaştırılan kartlarda da
-aynı etki görülebilmeli: karartma sitenin `:hover` gölgesini ve parlamasını bastırmamalı, gerekirse
-koyu temaya uygun bir kenar parlaması eklenmeli.
+## Tamamlananlar
+- **Açık mavi ve sarı tonlara örtü:** Belli bir açıklığın üstündeki mavi/sarı zeminler (bilgi kutusu,
+  uyarı şeridi) aynı tonda koyulaşır; doygun orta tonlu düğmeler ve küçük öğeler korunur. Ayarlar →
+  Karartma'da açılıp kapatılabilir, eşik seçilebilir (`smartTint`, `smartTintThreshold`).
+- **Gömülü video / modal arka planı:** Ekranı kaplayan koyu yarı saydam örtüler (backdrop, overlay,
+  ışık kutusu) sayfanın zemini sayılmaz; modal açıkken karartma kararı değişmez.
+- **Kartlarda üzerine gelince ışık efekti:** Sitenin kendi hover gölgesi (kart çevresindeki hale) koyu
+  renkli olduğu için karanlıkta görünmüyordu; aynı kuralın açık renkli eşi üretilir, efekt karanlıkta da
+  görünür. Koyu örtü artık `box-shadow` ile verilmediği için sitenin gölgesi de bastırılmaz.
+- **Gecikmeli örtüler:** Resimli/gradyanlı büyük alanlar (kahraman bölümü, afiş) ilk geçişte ölçülür;
+  kaydırırken de tarama yapılır; modal açıkken ekranın geri kalanı atlanmaz.
+- **Renkli büyük şeritler:** Sayfa genişliğindeki canlı renkli menü çubukları ve bölüm bantları tonu
+  korunarak koyulaşır; eşik ayarlardan seçilir. Açılır menülerin açık "üzerine gelince" zemini de koyulaşır.
+- **Ayarlar sayfasının sağ tarafı:** Geniş ekranda (≥1360 px) sağda bölüm ipucu, durum özeti ve
+  kısayol kartı gösterilir.
 
-## 4. Ayarlar sayfasının sağ tarafı
-Geniş ekranda ayarlar sayfasının sağ tarafı çok boş kalıyor. Bu alan değerlendirilecek
-(ör. seçili bölüme göre ipuçları, bu sitedeki durum özeti, kısayol kartı ya da hızlı ayarlar).

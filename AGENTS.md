@@ -14,7 +14,8 @@ Navigasyon Eklentisi/
 ├── content.js             — Panel (Shadow DOM, kompakt/tam), kaydırma motoru, menü, kısayollar,
 │                            okuma ilerlemesi, başlık gezgini, yer imleri, otomatik kaydırma, SPA uyumu
 ├── popup.html / popup.js  — Eklenti balonu: site durumu, hızlı gezinme, karartma seçimi
-├── options.html / options.js — Ayarlar sayfası: kenar menüsü + kartlar + üstte sabit kaydet çubuğu.
+├── options.html / options.js — Ayarlar sayfası: kenar menüsü + kartlar + üstte sabit kaydet çubuğu;
+│                            ≥1360 px'te sağ sütun (bölüm ipucu, durum özeti, kısayollar).
 │                            Ayarlar sayfasının kendisi önizleme alanıdır: gerçek panel CSS'iyle
 │                            çalışan panel (#navPreview, açık shadow root) bu sayfayı kaydırır.
 │                            Form alanlarının id'leri options.js ile eşleşir; değiştirirken ikisini birlikte güncelle.
@@ -48,8 +49,36 @@ Navigasyon Eklentisi/
   edilip açıksa iç gölge örtüsü (`OVERLAY`) uygulanır; renkli düz zeminler yalnız %70 üstünde ve büyükse örtülür;
   ekranın ≥%20'sini kaplayan açık `<img>` hafifçe karartılır; açık `::before/::after` `data-nvp-ps` ile boyanır.
   Placeholder/otomatik doldurma/seçenek renkleri stil sayfası kurallarıyla düzeltilir; açık shadow root'lar da işlenir.
+  Açık mavi/sarı zeminler `mapTint()` ile aynı tonda koyulaşır (`smartTint`, `smartTintThreshold` %45; doygun orta tonlar,
+  etkileşimli ve küçük öğeler hariç). Örtü `shadeEl()` ile en üst `background-image` katmanı olarak eklenir (box-shadow değil;
+  sitenin hover gölgesi korunur). `hoverGlowCss()` okunabilen stil sayfalarındaki `:hover`/`:focus-within` box-shadow
+  kurallarının açık renkli eşini üretir (aynı seçici ve boyut), böylece kart halesi karanlıkta da görünür. Resimli/gradyanlı büyük
+  alanlar ilk geçişte `estimateBg()` ile ölçülür (taramayı beklemez); tarama kaydırırken de 250 ms'de bir çalışır ve ekranı
+  kaplayan saydam katmanlar (modal kabı) ızgaranın geri kalanını kesmez.
+  Doygun renkli büyük şeritler (sayfa genişliğinde menü çubuğu, bölüm bandı) `mapBand()` ile tonu korunarak koyulaşır; gradyanlı
+  şeritlere `BAND_OV` örtüsü eklenir (`smartBands`, `smartBandThreshold` = HSL açıklığı %35; düğme/rozet ve dar öğeler hariç).
+  `hoverGlowCss()` ayrıca `:hover/:focus/:active` kurallarındaki açık zeminleri koyu ama belirgin bir vurguya çevirir (`mapHover()`).
+  Modal/video örtüleri `isBackdrop()` ile tanınır; `overlayOpen()` iken karartma kararı değiştirilmez.
   `invert` tüm sayfayı ters çevirir; Aydınlık seçeneği koyu siteyi açarken her zaman `invert` kullanılır. `theme` eski alan boyama.
 - Karar `storage.local.nvpDarkCache:<host>`'a yazılır; bir sonraki açılışta stil erken eklenir.
+- Stil öğesi (`#nvp-dark`) document_start'ta eklendiği için sayfa ayrıştırıldıkça `ensureLast()` ile belgenin sonuna
+  taşınır (eşit güçteki `!important` kurallarda sonra gelen kazanır). Akıllı yöntemin kök kuralı `:root,:root>body`
+  özgüllüğündedir; sitenin `body{background:…!important}` kuralını yener. `fixTextIn()` açık zeminli alt öğenin
+  zeminini de koyulaştırır (açık yazı + beyaz zemin oluşmaz).
+- Durum kurallarının koyu eşleri (`hoverGlowCss()`) ayrı `#nvp-dark-hover` stilindedir ve yalnız gerçek `:hover/:focus/:active`
+  seçicilerini içerir (aynı listedeki `[disabled]` gibi parçalar alınmaz). `smartProcess()` okurken bu stil kapatılır; böylece
+  odaklı/kilitli bir öğe o an koyu görünse de kalıcı koyu zemini yazılır.
+- Koyu yüzeydeki `::before/::after` simge ve okları (simge fontu rengi, CSS üçgeni `border-top/bottom-color`) `pseudoFgFixes()` ile
+  açılır: öğeye `--nvp-pf*/--nvp-pt*/--nvp-pu*` değişkeni ve `data-nvp-ps` belirteci (`fb/fa/tb/ta/ub/ua`) yazılır.
+- Zemini koyulaştırılan `select` kutusundaki tekrar etmeyen arka plan resmi (koyu açılır kutu oku) `fixSelectArrow()` ile açık bir
+  SVG okla değiştirilir.
+- Panel (content.js): kısa sayfada gizlenmez, `.short` ile soluk durur. `avoidWidgets()` sitenin köşe öğesini bir kez bulunca
+  (`liftEl`) panel onun 8 px üstünde sabit kalır; temel konum hesaplanmış dönüşümden (`m42`) bulunur, animasyon sırasında
+  pay şişmez. Öğe gizlenip gösterilse de panel inip kalkmaz; açıkken/üzerindeyken kaydırılmaz. Dışarı tıklama yığını hemen kapatır;
+  açık yığın 2,5 sn hiçbir etkileşim olmazsa (imleç üzerinde olsa bile) kendiliğinden kapanır (`IDLE_CLOSE_MS`, `bumpIdle()`);
+  her kapanış `closeStack()` üzerinden olur; düğme ipucu, bilgi hapı (`toast`) ve "kaldığın yere dön" düğmesi de aynı anda kapanır.
+  Yığın kapalıyken çıkan hap/düğme kendi süresiyle (2,6 sn / 6 sn) kapanır.
+  Panel tonu kaydırırken de (250 ms) ölçülür.
 - Panel kökü (`<nvp-root>`) yalnız `invert + hue-rotate` ile geri çevrilir.
 - Eski kayıtlar (`siteThemes`, `darkExcludeSites`) background.js'te bir kez `siteDark`'a taşınır.
 

@@ -36,6 +36,10 @@ const defaults = {
     readingProgress: true,
     autoScrollSpeed: 40,
     smartThreshold: 45,
+    smartTint: true,
+    smartTintThreshold: 45,
+    smartBands: true,
+    smartBandThreshold: 35,
     darkModeMethod: 'smart',
     darkModeAreas: { body: true, text: false, link: false, button: false, image: false, form: false, code: false, table: false, scrollbar: false },
     excludeCss: '',
@@ -850,11 +854,57 @@ Object.assign(translations.ru, {"methodSmart": "Умная покраска (н�
 Object.assign(translations.tr, {"smartThreshold": "Açık kalan alanları yakala", "smartThresholdHint": "Akıllı boyamadan sonra ekranda bu açıklığın üstünde kalan yerlere koyu örtü uygulanır. Düşük değer daha fazla alanı yakalar."});
 Object.assign(translations.en, {"smartThreshold": "Catch areas left light", "smartThresholdHint": "After smart painting, places on screen brighter than this get a dark overlay. Lower values catch more."});
 Object.assign(translations.ru, {"smartThreshold": "Ловить оставшиеся светлые места", "smartThresholdHint": "После умной покраски места ярче этого порога получают тёмный слой. Меньшее значение ловит больше."});
+Object.assign(translations.tr, {"smartBands": "Renkli büyük şeritleri koyulaştır", "smartBandsHint": "Üst menü çubuğu, turuncu/mavi bölüm bantları gibi sayfa genişliğindeki canlı renkli alanlar tonu korunarak koyulaşır; düğmeler ve rozetler etkilenmez.", "smartBandThreshold": "Renkli şerit eşiği", "smartBandThresholdHint": "Rengin açıklığı bu değerin üstündeyse şerit koyulaşır. Düşük değer daha koyu renkli şeritleri de yakalar."});
+Object.assign(translations.en, {"smartBands": "Darken large colored bands", "smartBandsHint": "Page-wide vivid areas such as the top menu bar or orange/blue section bands get darker while keeping their hue; buttons and badges are left alone.", "smartBandThreshold": "Colored band threshold", "smartBandThresholdHint": "A band is darkened when its color is lighter than this. Lower values also catch deeper colors."});
+Object.assign(translations.ru, {"smartBands": "Затемнять крупные цветные полосы", "smartBandsHint": "Яркие области во всю ширину страницы (верхняя панель меню, оранжевые/синие полосы разделов) затемняются с сохранением оттенка; кнопки и значки не трогаются.", "smartBandThreshold": "Порог для цветных полос", "smartBandThresholdHint": "Полоса затемняется, если её цвет светлее этого значения. Меньшее значение ловит и более тёмные цвета."});
+Object.assign(translations.tr, {"smartTint": "Açık mavi ve sarı zeminleri de koyulaştır", "smartTintHint": "Bilgi kutuları, uyarı şeritleri gibi açık mavi/sarı alanlar aynı tonda koyulaşır; doygun düğme renklerine ve küçük öğelere dokunulmaz.", "smartTintThreshold": "Mavi/sarı için açıklık eşiği", "smartTintThresholdHint": "Bu açıklığın üstündeki mavi ve sarı zeminler koyulaşır. Düşük değer daha koyu tonları da yakalar.",
+    "railTipTitle": "İpucu", "railStatusTitle": "Durum özeti", "railKeysTitle": "Kısayollar", "railUnsaved": "● Kaydedilmemiş değişiklik var",
+    "tip_sec-panel": "Paneldeki düğmeleri buradan seç. Az düğme daha sade bir panel demektir; sağ tık menüsü her zaman açılır.",
+    "tip_sec-look": "Renkler ve boyut sağ alttaki gerçek panelde anında görünür. Kaydetmeden önce panelin üzerine gelip dene.",
+    "tip_sec-dark": "Çoğu kişi için \"Sistem\" + \"Akıllı boyama\" en iyisidir: yalnız bilgisayar karanlıkken ve site açık renkliyse karartır, renkli düğmelere dokunmaz.",
+    "tip_sec-darkpro": "Zamanlama, yazı büyütme ve renk ayarları karartılmış sayfalara uygulanır. Bir site kötü görünüyorsa önce \"Karartılmayacak öğeler\"i dene.",
+    "tip_sec-sites": "\"- site.com\" paneli o sitede gizler, \"+ site.com\" zorla gösterir. Duraklatılmış sitelerde eklenti hiç çalışmaz.",
+    "tip_sec-dev": "Tema Stüdyosu'ndan kopyaladığın HTML ve CSS'i buraya yapıştır. Betikler ve tehlikeli öznitelikler kaydederken temizlenir.",
+    "tip_sec-backup": "Ayarlarını başka bir bilgisayara taşımak için dışa aktar, orada içe aktar. Sıfırlama geri alınamaz.",
+    "stTheme": "Sitelerin teması", "stMethod": "Yöntem", "stRun": "Çalıştığı yer", "stAll": "Tüm siteler", "stSelected": "Seçili siteler ({0})", "stPaused": "Duraklatılmış site", "stSiteDark": "Siteye özel tema", "stKeys": "Klavye kısayolları", "stOn": "Açık", "stOff": "Kapalı",
+    "kPage": "Sayfa yukarı / aşağı", "kEdge": "En üst / en alt", "kAuto": "Otomatik kaydırma", "kMark": "Yer imi ekle", "kPanel": "Paneli göster / gizle", "kTheme": "Bu sitenin teması", "kPopup": "Eklenti balonu", "kClick": "tık"});
+Object.assign(translations.en, {"smartTint": "Also darken light blue and yellow backgrounds", "smartTintHint": "Light blue/yellow areas such as info boxes and warning bars get a dark version of the same hue; saturated button colors and small elements are left alone.", "smartTintThreshold": "Lightness threshold for blue/yellow", "smartTintThresholdHint": "Blue and yellow backgrounds lighter than this are darkened. Lower values also catch deeper tones.",
+    "railTipTitle": "Tip", "railStatusTitle": "Status", "railKeysTitle": "Shortcuts", "railUnsaved": "● You have unsaved changes",
+    "tip_sec-panel": "Choose the panel buttons here. Fewer buttons make a cleaner panel; the right-click menu is always available.",
+    "tip_sec-look": "Colors and size show up instantly on the real panel at the bottom right. Hover it to try before saving.",
+    "tip_sec-dark": "For most people \"System\" + \"Smart painting\" works best: it dims only when your computer is dark and the site is light, and leaves colored buttons alone.",
+    "tip_sec-darkpro": "Schedule, text size and color tweaks apply to dimmed pages. If a site looks wrong, try \"Elements to keep\" first.",
+    "tip_sec-sites": "\"- site.com\" hides the panel on that site, \"+ site.com\" forces it. The extension does not run at all on paused sites.",
+    "tip_sec-dev": "Paste the HTML and CSS copied from Theme Studio here. Scripts and unsafe attributes are removed when saving.",
+    "tip_sec-backup": "Export to move your settings to another computer, then import there. Resetting cannot be undone.",
+    "stTheme": "Theme of sites", "stMethod": "Method", "stRun": "Runs on", "stAll": "All sites", "stSelected": "Selected sites ({0})", "stPaused": "Paused sites", "stSiteDark": "Per-site theme", "stKeys": "Keyboard shortcuts", "stOn": "On", "stOff": "Off",
+    "kPage": "Page up / down", "kEdge": "Top / bottom", "kAuto": "Auto-scroll", "kMark": "Add bookmark", "kPanel": "Show / hide panel", "kTheme": "This site's theme", "kPopup": "Extension popup", "kClick": "click"});
+Object.assign(translations.ru, {"smartTint": "Затемнять и светло-синие и жёлтые фоны", "smartTintHint": "Светло-синие/жёлтые области (инфоблоки, предупреждения) становятся тёмными того же оттенка; насыщенные цвета кнопок и мелкие элементы не трогаются.", "smartTintThreshold": "Порог светлоты для синего/жёлтого", "smartTintThresholdHint": "Синие и жёлтые фоны светлее этого порога затемняются. Меньшее значение ловит и более тёмные тона.",
+    "railTipTitle": "Совет", "railStatusTitle": "Сводка", "railKeysTitle": "Горячие клавиши", "railUnsaved": "● Есть несохранённые изменения",
+    "tip_sec-panel": "Выберите кнопки панели. Меньше кнопок — проще панель; меню по правому клику доступно всегда.",
+    "tip_sec-look": "Цвета и размер сразу видны на настоящей панели справа внизу. Наведите на неё, чтобы попробовать до сохранения.",
+    "tip_sec-dark": "Обычно лучше всего «Системная» + «Умная покраска»: затемняет только при тёмной теме компьютера и светлом сайте и не трогает цветные кнопки.",
+    "tip_sec-darkpro": "Расписание, размер текста и цвета применяются к затемнённым страницам. Если сайт выглядит плохо, сначала попробуйте «Не затемнять».",
+    "tip_sec-sites": "«- site.com» скрывает панель на сайте, «+ site.com» показывает принудительно. На сайтах на паузе расширение не работает.",
+    "tip_sec-dev": "Вставьте сюда HTML и CSS из Theme Studio. Скрипты и опасные атрибуты удаляются при сохранении.",
+    "tip_sec-backup": "Экспортируйте настройки, чтобы перенести их на другой компьютер, и импортируйте там. Сброс нельзя отменить.",
+    "stTheme": "Тема сайтов", "stMethod": "Метод", "stRun": "Где работает", "stAll": "Все сайты", "stSelected": "Выбранные сайты ({0})", "stPaused": "Сайты на паузе", "stSiteDark": "Тема для сайтов", "stKeys": "Горячие клавиши", "stOn": "Вкл.", "stOff": "Выкл.",
+    "kPage": "Страница вверх / вниз", "kEdge": "В начало / в конец", "kAuto": "Автопрокрутка", "kMark": "Добавить закладку", "kPanel": "Показать / скрыть панель", "kTheme": "Тема этого сайта", "kPopup": "Окно расширения", "kClick": "клик"});
 function updateThresholdOut() {
     const el = document.getElementById('smartThreshold'), out = document.getElementById('smartThresholdOut');
     if (el && out) out.textContent = '%' + el.value;
 }
 document.addEventListener('input', (e) => { if (e.target && e.target.id === 'smartThreshold') updateThresholdOut(); });
+function updateTintOut() {
+    const el = document.getElementById('smartTintThreshold'), out = document.getElementById('smartTintThresholdOut');
+    if (el && out) out.textContent = '%' + el.value;
+}
+document.addEventListener('input', (e) => { if (e.target && e.target.id === 'smartTintThreshold') updateTintOut(); });
+function updateBandOut() {
+    const el = document.getElementById('smartBandThreshold'), out = document.getElementById('smartBandThresholdOut');
+    if (el && out) out.textContent = '%' + el.value;
+}
+document.addEventListener('input', (e) => { if (e.target && e.target.id === 'smartBandThreshold') updateBandOut(); });
 let activeLang = 'tr';
 const CSS_DEFAULT = {
     tr: '/* Sitelere enjekte edilecek CSS kodu */\n',
@@ -1010,6 +1060,10 @@ function collectFormData() {
         panelStyle: document.getElementById('panelStyle').value,
         autoScrollSpeed: Math.min(400, Math.max(10, safeInt(document.getElementById('autoScrollSpeed').value, defaults.autoScrollSpeed))),
         smartThreshold: Math.min(95, Math.max(40, safeInt(document.getElementById('smartThreshold').value, defaults.smartThreshold))),
+        smartTint: document.getElementById('smartTint').checked,
+        smartTintThreshold: Math.min(90, Math.max(30, safeInt(document.getElementById('smartTintThreshold').value, defaults.smartTintThreshold))),
+        smartBands: document.getElementById('smartBands').checked,
+        smartBandThreshold: Math.min(80, Math.max(20, safeInt(document.getElementById('smartBandThreshold').value, defaults.smartBandThreshold))),
         darkModeMethod: document.getElementById('darkModeMethod').value,
         darkModeAreas: {
             body: document.getElementById('darkAreaBody').checked,
@@ -1113,6 +1167,10 @@ function updateJsonField(data) {
         readingProgress: data.readingProgress,
         autoScrollSpeed: data.autoScrollSpeed,
         smartThreshold: data.smartThreshold,
+        smartTint: data.smartTint,
+        smartTintThreshold: data.smartTintThreshold,
+        smartBands: data.smartBands,
+        smartBandThreshold: data.smartBandThreshold,
         darkModeMethod: data.darkModeMethod,
         darkModeAreas: data.darkModeAreas,
         excludeCss: data.excludeCss,
@@ -1423,6 +1481,12 @@ function updatePreview() {
         document.getElementById('autoScrollSpeed').value = data.autoScrollSpeed ?? defaults.autoScrollSpeed;
         document.getElementById('smartThreshold').value = data.smartThreshold ?? defaults.smartThreshold;
         updateThresholdOut();
+        document.getElementById('smartTint').checked = data.smartTint !== false;
+        document.getElementById('smartTintThreshold').value = data.smartTintThreshold ?? defaults.smartTintThreshold;
+        updateTintOut();
+        document.getElementById('smartBands').checked = data.smartBands !== false;
+        document.getElementById('smartBandThreshold').value = data.smartBandThreshold ?? defaults.smartBandThreshold;
+        updateBandOut();
         document.getElementById('darkModeMethod').value = data.darkModeMethod === 'tema' ? 'theme' : (data.darkModeMethod || 'invert');
         const darkAreas = data.darkModeAreas || {};
         document.getElementById('darkAreaBody').checked = darkAreas.body !== false;
@@ -1590,6 +1654,10 @@ document.getElementById('jsonArea').addEventListener('change', function () {
         if (d.readingProgress !== undefined) document.getElementById('readingProgress').checked = d.readingProgress;
         if (d.autoScrollSpeed !== undefined) document.getElementById('autoScrollSpeed').value = d.autoScrollSpeed;
         if (d.smartThreshold !== undefined) { document.getElementById('smartThreshold').value = d.smartThreshold; updateThresholdOut(); }
+        if (d.smartTint !== undefined) document.getElementById('smartTint').checked = d.smartTint;
+        if (d.smartTintThreshold !== undefined) { document.getElementById('smartTintThreshold').value = d.smartTintThreshold; updateTintOut(); }
+        if (d.smartBands !== undefined) document.getElementById('smartBands').checked = d.smartBands;
+        if (d.smartBandThreshold !== undefined) { document.getElementById('smartBandThreshold').value = d.smartBandThreshold; updateBandOut(); }
         if (d.darkModeMethod !== undefined) document.getElementById('darkModeMethod').value = d.darkModeMethod === 'tema' ? 'theme' : d.darkModeMethod;
         if (d.darkModeAreas) {
             const darkAreas = d.darkModeAreas;
@@ -2115,7 +2183,7 @@ const SECTION_SETTINGS = {
     active: ['showThemeButton', 'showPageButton', 'showEdgeButton'],
     position: ['position', 'panelStyle', 'panelTheme', 'offsetRight', 'offsetBottom', 'buttonRadius', 'buttonSize', 'keyboardShortcuts', 'autoHide', 'autoHideDelay', 'rememberPosition', 'gestures', 'detectConflicts', 'readingProgress', 'autoScrollSpeed'],
     visual: ['hoverColor', 'bgColorHex', 'buttonColor', 'arrowColor', 'buttonSize', 'buttonRadius', 'offsetRight'],
-    dark: ['pageDark', 'balloonMode', 'darkModeMethod', 'smartThreshold', 'darkModeAreas', 'excludeCss', 'invertIntensity', 'invertBrightness', 'invertContrast', 'invertGrayscale', 'invertWarmth', 'invertDim', 'invertImageMode', 'colorPreserve', 'invertAreas', 'invertOverrideText', 'invertTextColor', 'invertOverrideLink', 'invertLinkColor', 'invertOverrideBg', 'invertBgColor', 'overlayHeadingColor', 'overlayHeadingColorHex', 'overlayBoldColor', 'overlayBoldColorHex', 'overlaySvgColor', 'overlaySvgColorHex', 'overlayGrayscale', 'overlayLineHeight', 'overlayLetterSpacing', 'overlayTextShadow', 'overlayFontFamily'],
+    dark: ['pageDark', 'balloonMode', 'darkModeMethod', 'smartThreshold', 'smartTint', 'smartTintThreshold', 'smartBands', 'smartBandThreshold', 'darkModeAreas', 'excludeCss', 'invertIntensity', 'invertBrightness', 'invertContrast', 'invertGrayscale', 'invertWarmth', 'invertDim', 'invertImageMode', 'colorPreserve', 'invertAreas', 'invertOverrideText', 'invertTextColor', 'invertOverrideLink', 'invertLinkColor', 'invertOverrideBg', 'invertBgColor', 'overlayHeadingColor', 'overlayHeadingColorHex', 'overlayBoldColor', 'overlayBoldColorHex', 'overlaySvgColor', 'overlaySvgColorHex', 'overlayGrayscale', 'overlayLineHeight', 'overlayLetterSpacing', 'overlayTextShadow', 'overlayFontFamily'],
     darkAdvanced: ['darkAutoDetect', 'darkSchedule', 'darkTransition', 'darkFontSize', 'darkFontWeight', 'darkSaturate', 'darkHueRotate', 'darkScrollOpt'],
     siteRules: ['siteRules', 'pausedSites', 'activeSites', 'enableAllSites']
 };
@@ -2145,4 +2213,65 @@ loadSettings();
     const cp = document.getElementById('colorPreserve');
     if (cp) { hide(cp.closest('label')); const h = document.querySelector('[data-i18n="colorPreserveHint"]'); hide(h); }
     ['darkScrollOpt', 'darkAutoDetect'].forEach((id) => { const el = document.getElementById(id); if (el) hide(el.closest('.setting-group')); });
+})();
+
+// ── Sağ sütun (geniş ekran): bölüm ipucu, durum özeti, kısayollar ─────────────
+(function rail() {
+    const box = document.getElementById('rail');
+    if (!box) return;
+    const T = (k) => ((translations[activeLang] || translations.tr)[k]) || translations.tr[k] || '';
+    const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    let siteDarkCount = 0;
+    function readLocal() {
+        try {
+            chrome.storage.local.get({ siteDark: {} }, (r) => {
+                siteDarkCount = Object.keys((r && r.siteDark) || {}).length;
+                render();
+            });
+        } catch (_) { /* önizleme dışında */ }
+    }
+    function tip() {
+        const on = document.querySelector('#sideNav a.on') || document.querySelector('#sideNav a');
+        if (!on) return;
+        const id = on.getAttribute('href').slice(1);
+        document.getElementById('railSecName').textContent = on.textContent.trim();
+        document.getElementById('railTipText').textContent = T('tip_' + id);
+    }
+    const optText = (id) => { const el = document.getElementById(id); return el && el.selectedOptions[0] ? el.selectedOptions[0].textContent.trim() : ''; };
+    function render() {
+        tip();
+        let d = {};
+        try { d = collectFormData(); } catch (_) { d = {}; }
+        const L = _lastLoaded || {};
+        const all = L.enableAllSites !== false;
+        const paused = (L.pausedSites || []).length;
+        const rows = [
+            [T('stTheme'), optText('pageDark')],
+            [T('stMethod'), optText('darkModeMethod').replace(/\s*\(.*\)$/, '')],
+            [T('stRun'), all ? T('stAll') : T('stSelected').replace('{0}', (L.activeSites || []).length)],
+            [T('stPaused'), String(paused)],
+            [T('stSiteDark'), String(siteDarkCount)],
+            [T('stKeys'), d.keyboardShortcuts === false ? T('stOff') : T('stOn')]
+        ];
+        document.getElementById('railStatus').innerHTML = rows.map(([k, v]) => '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>').join('');
+        document.getElementById('railUnsaved').hidden = !_dirty;
+        const mac = isMac();
+        const alt = mac ? '⌥' : 'Alt', ctrl = mac ? '⌃' : 'Ctrl';
+        const keys = [
+            [T('kPage'), alt + ' ↑ / ↓'], [T('kEdge'), ctrl + ' ' + alt + ' ↑ / ↓'], [T('kAuto'), alt + ' S'],
+            [T('kMark'), alt + ' + ' + T('kClick')], [T('kPanel'), alt + ' ⇧ N'], [T('kTheme'), alt + ' ⇧ T'], [T('kPopup'), ctrl + ' ⇧ 8']
+        ];
+        document.getElementById('railKeys').innerHTML = keys.map(([k, v]) => '<li><span>' + esc(k) + '</span><kbd>' + esc(v) + '</kbd></li>').join('');
+    }
+    let t = 0;
+    const later = () => { clearTimeout(t); t = setTimeout(render, 120); };
+    // Kaydet/yükle durumu değişince (markDirty her ikisinde de çağrılır) özeti yenile
+    const origMarkDirty = markDirty;
+    markDirty = function (v) { origMarkDirty(v); later(); };
+    ['input', 'change'].forEach((ev) => document.addEventListener(ev, later, true));
+    new MutationObserver(later).observe(document.getElementById('sideNav'), { subtree: true, attributes: true, attributeFilter: ['class'] });
+    new MutationObserver(later).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+    try { chrome.storage.onChanged.addListener((ch, area) => { if (area === 'local' && ch.siteDark) readLocal(); else if (area === 'sync') later(); }); } catch (_) { /* yok say */ }
+    readLocal();
+    render();
 })();

@@ -368,6 +368,7 @@
             returnBtn = document.createElement('button');
             returnBtn.type = 'button';
             returnBtn.addEventListener('click', () => { if (returnY != null) scrollToY(returnY); returnY = null; hideReturnButton(); });
+            returnBtn.addEventListener('pointermove', () => bumpIdle(), { passive: true });
         }
         returnBtn.className = 'pill ' + themeClass();
         returnBtn.innerHTML = ICON.back + '<span>' + esc(T().returnBack) + '</span>';
@@ -375,8 +376,10 @@
         placeNearPanel(returnBtn, 0);
         requestAnimationFrame(() => returnBtn && returnBtn.classList.add('show'));
         clearTimeout(returnTimer);
-        returnTimer = setTimeout(hideReturnButton, 6000);
+        // Yığın açıkken onunla birlikte kapanır (closeStack); kapalıyken kendi süresi işler
+        if (stackOpen()) bumpIdle(); else returnTimer = setTimeout(hideReturnButton, 6000);
     }
+    const stackOpen = () => !!(panel && panel.classList.contains('open'));
     function hideReturnButton() {
         clearTimeout(returnTimer);
         if (returnBtn) { returnBtn.classList.remove('show'); const b = returnBtn; setTimeout(() => { if (!b.classList.contains('show')) b.remove(); }, 250); }
@@ -401,14 +404,23 @@
     let toastEl = null, toastTimer = null;
     function toast(text) {
         ensureHost();
-        if (!toastEl) { toastEl = document.createElement('div'); toastEl.setAttribute('role', 'status'); }
+        if (!toastEl) {
+            toastEl = document.createElement('div');
+            toastEl.setAttribute('role', 'status');
+            toastEl.addEventListener('pointermove', () => bumpIdle(), { passive: true });
+        }
         toastEl.className = 'pill toast ' + themeClass();
         toastEl.textContent = text;
         shadow.appendChild(toastEl);
         placeNearPanel(toastEl, 1);
         requestAnimationFrame(() => toastEl && toastEl.classList.add('show'));
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => { if (toastEl) { toastEl.classList.remove('show'); setTimeout(() => toastEl && !toastEl.classList.contains('show') && toastEl.remove(), 250); } }, 2600);
+        // Yığın açıkken bilgi hapı da onunla birlikte kapanır; kapalıyken (kısayol vb.) kendi süresi işler
+        if (stackOpen()) bumpIdle(); else toastTimer = setTimeout(hideToast, 2600);
+    }
+    function hideToast() {
+        clearTimeout(toastTimer);
+        if (toastEl) { toastEl.classList.remove('show'); setTimeout(() => toastEl && !toastEl.classList.contains('show') && toastEl.remove(), 250); }
     }
 
     // ── Okuma ilerlemesi ───────────────────────────────────────────────────
@@ -453,7 +465,9 @@
                 const m = /rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?/i.exec(getComputedStyle(el).backgroundColor);
                 if (m && (m[4] === undefined || parseFloat(m[4]) >= 0.6)) { c = [+m[1], +m[2], +m[3]]; break; }
             }
-            if (!c) c = [255, 255, 255];
+            // Opak öğe yoksa sayfanın tuvali görünür: akıllı karartma açıksa koyu, değilse beyaz kabul edilir
+            // (kök zeminin geçiş animasyonu sürerken saydam okunabilir)
+            if (!c) c = (DARK && DARK.state === 'on' && !DARK.counter) ? [22, 24, 29] : [255, 255, 255];
             sum += relLum(c); n++;
         }
         if (!n) return;
@@ -563,6 +577,10 @@
         panel.addEventListener('mouseleave', () => scheduleClose());
         panel.addEventListener('focusin', () => openStack());
         panel.addEventListener('focusout', (e) => { if (!panel.contains(e.relatedTarget)) scheduleClose(); });
+        // Panelin üzerinde hareket, tıklama, tekerlek ya da tuş: hareketsizlik sayacı yeniden başlar
+        ['pointermove', 'pointerdown', 'wheel', 'keydown'].forEach((ev) => panel.addEventListener(ev, bumpIdle, { passive: true }));
+        // Kapanınca imleç hâlâ üstündeyse, yeniden açmak için düğmeye hafifçe dokunmak (hareket) yeterli olsun
+        fab.addEventListener('pointermove', () => { if (!panel.classList.contains('open') && !panel.classList.contains('dragging')) openStack(); }, { passive: true });
         fab.addEventListener('mouseenter', () => { fab.setAttribute('data-ttip', fabLabel()); });
         fab.setAttribute('data-ttip', fabLabel());
         stack.querySelectorAll('#btn-theme-toggle').forEach((b) => { if (!b.querySelector('svg') || b.classList.contains('nav-theme') === false) b.setAttribute('data-custom', ''); });
@@ -603,11 +621,31 @@
     }
 
     // Kompakt yığın: aç/kapat
-    let closeTimer = null;
-    function openStack() { if (panel) { panel.classList.add('open'); panel.classList.remove('rest'); } }
+    let closeTimer = null, idleTimer = null;
+    const IDLE_CLOSE_MS = 2500;   // açık yığın, hiçbir şey yapılmazsa bu süre sonra kendiliğinden kapanır
+    // Fareyle tıklanan düğme odakta kalır; panel yalnız KLAVYE odağında (:focus-visible) açık tutulur
+    const kbdFocus = () => { const f = shadow && shadow.activeElement; return !!(f && panel && panel.contains(f) && f.matches(':focus-visible')); };
+    // Yığın kapanınca düğme ipucu (baloncuk) da hemen kapanır; imleç düğmenin üstünde kalsa bile asılı kalmaz
+    function closeStack() {
+        if (!panel) return;
+        const wasOpen = panel.classList.contains('open');
+        panel.classList.remove('open');
+        clearTimeout(idleTimer);
+        try { Tip.hide(true); } catch (_) { /* yok say */ }
+        // Panelle birlikte açılan bilgi hapı ve "kaldığın yere dön" düğmesi de aynı anda kapanır
+        if (wasOpen) { hideToast(); hideReturnButton(); }
+    }
+    function openStack() { if (panel) { panel.classList.add('open'); panel.classList.remove('rest'); bumpIdle(); } }
+    // Hareketsizlik sayacı: açıkken her etkileşimde yeniden başlar; dolunca imleç üzerinde olsa bile kapanır
+    function bumpIdle() {
+        clearTimeout(idleTimer);
+        if (!panel || !panel.classList.contains('open')) return;
+        idleTimer = setTimeout(() => { if (panel && !menu && !kbdFocus()) closeStack(); }, IDLE_CLOSE_MS);
+    }
     function scheduleClose() {
         clearTimeout(closeTimer);
-        closeTimer = setTimeout(() => { if (panel && !menu && !panel.matches(':hover') && !panel.contains(shadow.activeElement)) panel.classList.remove('open'); }, num(S.autoHideDelay, 0, 10000, 600));
+        const onPill = () => !!((returnBtn && returnBtn.isConnected && returnBtn.matches(':hover')) || (toastEl && toastEl.isConnected && toastEl.matches(':hover')));
+        closeTimer = setTimeout(() => { if (panel && !menu && !panel.matches(':hover') && !onPill() && !kbdFocus()) closeStack(); }, num(S.autoHideDelay, 0, 10000, 600));
     }
 
     // ── Sürükleme (fab ya da yığın boşluğu) + dokunmatik açma ──────────────
@@ -682,22 +720,36 @@
         panel.addEventListener('pointerup', end);
         panel.addEventListener('pointercancel', end);
     }
+    // Panel açıkken sayfada başka bir yere tıklanınca yığın hemen kapanır (beklemeden)
+    document.addEventListener('pointerdown', (e) => {
+        if (!panel || e.target === hostEl || menu || !panel.classList.contains('open')) return;
+        clearTimeout(closeTimer);
+        closeStack();
+    }, { capture: true, passive: true });
     function scheduleCloseTouch() {
         const off = (e) => {
             if (e.target === hostEl) return;
             document.removeEventListener('pointerdown', off, true);
-            if (panel && !menu) panel.classList.remove('open');
+            if (panel && !menu) closeStack();
         };
         setTimeout(() => document.addEventListener('pointerdown', off, true), 0);
     }
 
     // ── Köşedeki sohbet/çerez öğeleriyle çakışmayı önle ────────────────────
+    // Sitenin köşe öğesi (kendi "yukarı çık" düğmesi, sohbet balonu) bir kez bulununca hatırlanır ve panel
+    // onun üstünde SABİT durur. Site düğmeyi kaydırdıkça gizleyip gösterse de panel inip kalkmaz.
+    let liftEl = null, liftVal = 0;
     function avoidWidgets() {
-        if (!panel || !fab || panelXY || !S.detectConflicts || String(S.position || '').endsWith('top')) { if (panel) panel.style.setProperty('--lift', '0px'); return; }
-        const lift = parseFloat(panel.style.getPropertyValue('--lift')) || 0;
+        if (!panel || !fab || panelXY || !S.detectConflicts || String(S.position || '').endsWith('top')) { liftEl = null; liftVal = 0; if (panel) panel.style.setProperty('--lift', '0px'); return; }
+        // İmleç paneldeyken ya da menü açıkken panel kaydırılmaz (altından kayıp kapanmasın)
+        if (panel.classList.contains('open') || panel.matches(':hover') || menu) return;
         const r = fab.getBoundingClientRect();
-        const baseTop = r.top + lift, baseBottom = r.bottom + lift;
-        let minTop = Infinity;
+        // Panelin O ANKİ kayması hesaplanmış dönüşümden okunur: kalkma animasyonu sürerken de temel
+        // (kalkmamış) konum doğru bulunur, pay iki kez sayılıp şişmez.
+        let cur = 0;
+        try { cur = new DOMMatrixReadOnly(getComputedStyle(panel).transform).m42 || 0; } catch (_) { cur = 0; }
+        const baseTop = r.top - cur, baseBottom = r.bottom - cur;
+        let minTop = Infinity, found = null;
         for (const [x, y] of [[r.left + 4, baseBottom - 4], [r.right - 4, baseBottom - 4], [r.left + r.width / 2, baseTop + r.height / 2], [r.left + 4, baseTop + 4], [r.right - 4, baseTop + 4]]) {
             for (const el of hitList(x, y)) {
                 if (el === document.documentElement || el === document.body) continue;
@@ -707,13 +759,19 @@
                 }
                 if (fixed) {
                     const fr = fixed.getBoundingClientRect();
-                    if (fr.height < window.innerHeight * 0.5 && fr.width < window.innerWidth * 0.9) minTop = Math.min(minTop, fr.top);
+                    if (fr.height < window.innerHeight * 0.5 && fr.width < window.innerWidth * 0.9 && fr.top < minTop) { minTop = fr.top; found = fixed; }
                 }
                 break;
             }
         }
-        const need = minTop === Infinity ? 0 : clamp(baseBottom - minTop + 10, 0, window.innerHeight * 0.5);
-        panel.style.setProperty('--lift', Math.round(need) + 'px');
+        if (found) {
+            // Öğenin hemen üstüne, 8 px boşlukla
+            liftVal = Math.round(clamp(baseBottom - minTop + 8, 0, window.innerHeight * 0.5));
+            liftEl = found;
+        } else if (!(liftEl && liftEl.isConnected)) {
+            liftEl = null; liftVal = 0;                 // öğe sayfadan tamamen kalktıysa panel yerine döner
+        }
+        if ((parseFloat(panel.style.getPropertyValue('--lift')) || 0) !== liftVal) panel.style.setProperty('--lift', liftVal + 'px');
     }
 
     // Sitenin kendi "yukarı çık" düğmesi artık düğme gizletmez (kaydırınca kaybolan, yalnız en üstte
@@ -726,10 +784,13 @@
         if (!panel) return;
         if (hostEl && !hostEl.isConnected) ensureHost();
         const i = scrollInfo();
-        const show = i.max > i.view * 0.5;
-        hiddenReason = show ? '' : 'short';
-        panel.classList.toggle('hidden', !show);
-        if (show) avoidWidgets();
+        // Kısa (neredeyse kaydırılamayan) sayfada da panel kalır: menü, tema ve ayarlar burada da gerekir.
+        // Yalnız soluk durur; üzerine gelince tam görünür.
+        const short = !(i.max > i.view * 0.5);
+        hiddenReason = '';
+        panel.classList.remove('hidden');
+        panel.classList.toggle('short', short);
+        avoidWidgets();
     }
 
     // ── Kaydırma olayı: ilerleme, yön, konum belleği ───────────────────────
@@ -743,9 +804,12 @@
             // Sitenin kendi "yukarı çık" düğmesi kaydırınca belirebilir: sık ama seyrek kontrol
             const now = Date.now();
             if (panel && now - lastSiteCheck > 400) { lastSiteCheck = now; checkConflict(); avoidWidgets(); }
+            // Açık/koyu bölümler arasında geçerken panel tonu da hemen uysun (2,5 sn beklemeden)
+            if (panel && now - lastToneAt > 250) { lastToneAt = now; applyTone(); }
+            clearTimeout(toneT); toneT = setTimeout(() => { if (panel) applyTone(); }, 300);
         });
     }
-    let lastSiteCheck = 0;
+    let lastSiteCheck = 0, lastToneAt = 0, toneT = 0;
     function updateProgress() {
         if (!panel) return;
         const i = scrollInfo();
@@ -761,7 +825,7 @@
         panel.classList.toggle('attop', i.top < i.view * 0.35);
         lastTop = i.top;
         if (fab.matches(':hover')) { fab.setAttribute('data-ttip', fabLabel()); Tip.update(fab); }
-        if (panel.classList.contains('hidden') && i.max > i.view * 0.5) updatePanel();
+        if (panel.classList.contains('short') && i.max > i.view * 0.5) updatePanel();
     }
 
     // ── Menü ───────────────────────────────────────────────────────────────
