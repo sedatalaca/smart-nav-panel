@@ -26,7 +26,7 @@ const defaults = {
     paused: false,
     pausedSites: [],
     activeSites: [],
-    enableAllSites: true,
+    enableAllSites: false,
     siteRules: [],
     autoHide: true,
     autoHideDelay: 300,
@@ -2243,7 +2243,7 @@ loadSettings();
         let d = {};
         try { d = collectFormData(); } catch (_) { d = {}; }
         const L = _lastLoaded || {};
-        const all = L.enableAllSites !== false;
+        const all = L.enableAllSites === true;
         const paused = (L.pausedSites || []).length;
         const rows = [
             [T('stTheme'), optText('pageDark')],

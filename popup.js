@@ -132,7 +132,7 @@ function render(st, s) {
 
     document.getElementById('swRun').addEventListener('change', (e) => {
         const on = e.target.checked;
-        syncGet({ pausedSites: [], activeSites: [], enableAllSites: true }, (r) => {
+        syncGet({ pausedSites: [], activeSites: [], enableAllSites: false }, (r) => {
             let paused = (r.pausedSites || []).filter((h) => h !== st.host);
             let active = (r.activeSites || []).filter((h) => h !== st.host);
             if (r.enableAllSites) { if (!on) paused.push(st.host); }
@@ -145,7 +145,7 @@ function render(st, s) {
 }
 
 function refresh() {
-    syncGet({ language: UI_LANG, balloonMode: 'system', enableAllSites: true }, (s) => {
+    syncGet({ language: UI_LANG, balloonMode: 'system', enableAllSites: false }, (s) => {
         D = TRANSLATIONS[s.language] || TRANSLATIONS[UI_LANG] || TRANSLATIONS.en;
         document.documentElement.lang = s.language || UI_LANG;
         applyPopupTheme(s.balloonMode);

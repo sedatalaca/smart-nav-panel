@@ -43,7 +43,7 @@
         offsetRight: 24, offsetBottom: 24, buttonRadius: 12, buttonSize: 36, position: 'right-bottom',
         panelStyle: 'compact', panelTheme: 'auto',
         showThemeButton: true, showPageButton: true, showEdgeButton: true, keyboardShortcuts: true,
-        paused: false, pausedSites: [], activeSites: [], enableAllSites: true, siteRules: [],
+        paused: false, pausedSites: [], activeSites: [], enableAllSites: false, siteRules: [],
         autoHide: true, autoHideDelay: 600, rememberPosition: true, gestures: true, detectConflicts: true,
         readingProgress: true, autoScrollSpeed: 40,
         customCss: '', customButtonTemplate: '', language: UI_LANG

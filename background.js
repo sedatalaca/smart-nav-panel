@@ -75,6 +75,16 @@ function migrateMethod(done) {
     });
 }
 
+// Eklenti artık sitelerde varsayılan olarak KAPALI başlar (v5.2): yalnız popup'taki "Bu sitede çalışsın"
+// ile açılan sitelerde panel, kısayollar ve karartma çalışır. Eski kurulumlarda bir kez uygulanır;
+// daha önce açıkça çalıştırılan siteler (activeSites) korunur.
+function migrateOptIn(done) {
+    chrome.storage.sync.get({ nvpOptIn7: false }, (d) => {
+        if (chrome.runtime.lastError || d.nvpOptIn7) { done(); return; }
+        chrome.storage.sync.set({ nvpOptIn7: true, enableAllSites: false }, done);
+    });
+}
+
 chrome.runtime.onInstalled.addListener(() => {
-    try { migrate(() => migrateMethod(injectIntoOpenTabs)); } catch (_) { /* yok say */ }
+    try { migrate(() => migrateMethod(() => migrateOptIn(injectIntoOpenTabs))); } catch (_) { /* yok say */ }
 });

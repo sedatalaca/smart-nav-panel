@@ -98,10 +98,13 @@ Navigasyon Eklentisi/
 
 ## Test kontrol listesi
 1. `chrome://extensions` → Geliştirici modu → "Paketlenmemiş öğe yükle" → bu klasör.
-2. Uzun bir sayfa: sağ altta ilerleme halkalı tek düğme; üzerine gelince yığın açılır (⋯, tema, en üst, sayfa ↑/↓, en alt).
-3. Sayfanın başındayken düğme "aşağı kaydır", aşağıdayken "en üste çık" olur.
-4. Sağ tık ya da ⋯ → menü: Başlıklar, Yer imleri, Otomatik kaydır, karartma (Otomatik/Açık/Kapalı), paneli gizle, Ayarlar.
-5. Sistem karanlıkken: Wikipedia gibi açık site kararır; YouTube/GitHub (karanlık temada) kararmaz.
-6. Gmail/Notion gibi iç kaydırıcılı sitelerde sayfa ↑/↓ doğru kabı kaydırır; sabit başlık altında satır kaybolmaz.
-7. SPA'da rota değişince yer imleri ve ilerleme yeni sayfaya göre güncellenir.
-8. Popup: durum satırı, hızlı gezinme, karartma seçimi, "Bu sitede çalışsın", "Paneli göster", "Her yerde duraklat".
+2. Yeni açılan bir sitede panel ve karartma yok (varsayılan kapalı, `enableAllSites: false`); popup'tan "Bu sitede
+   çalışsın" açılınca site `activeSites`'a eklenir ve ikisi de devreye girer. Eski kurulumlar background.js'teki
+   `migrateOptIn()` ile bir kez kapalıya geçirilir (`nvpOptIn7`), `activeSites` korunur.
+3. Uzun bir sayfa: sağ altta ilerleme halkalı tek düğme; üzerine gelince yığın açılır (⋯, tema, en üst, sayfa ↑/↓, en alt).
+4. Sayfanın başındayken düğme "aşağı kaydır", aşağıdayken "en üste çık" olur.
+5. Sağ tık ya da ⋯ → menü: Başlıklar, Yer imleri, Otomatik kaydır, karartma (Otomatik/Açık/Kapalı), paneli gizle, Ayarlar.
+6. Sistem karanlıkken: Wikipedia gibi açık site kararır; YouTube/GitHub (karanlık temada) kararmaz.
+7. Gmail/Notion gibi iç kaydırıcılı sitelerde sayfa ↑/↓ doğru kabı kaydırır; sabit başlık altında satır kaybolmaz.
+8. SPA'da rota değişince yer imleri ve ilerleme yeni sayfaya göre güncellenir.
+9. Popup: durum satırı, hızlı gezinme, karartma seçimi, "Bu sitede çalışsın", "Paneli göster", "Her yerde duraklat".

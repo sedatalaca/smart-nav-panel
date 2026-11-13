@@ -1,8 +1,10 @@
 # Smart Nav Panel — Akıllı Gezinme Paneli
 
-Her sitede çalışan, sayfanın tasarımına uyum sağlayan bir Chrome eklentisi: kompakt gezinme paneli,
-okuma ilerlemesi, başlık gezgini, yer imleri, otomatik kaydırma ve sitenin kendi karanlık modunu
-bozmayan akıllı karartma.
+Sayfanın tasarımına uyum sağlayan bir Chrome eklentisi: kompakt gezinme paneli, okuma ilerlemesi,
+başlık gezgini, yer imleri, otomatik kaydırma ve sitenin kendi karanlık modunu bozmayan akıllı karartma.
+
+Eklenti sitelerde **varsayılan olarak kapalıdır**. Bir sitede kullanmak için eklenti simgesine tıklayıp
+**"Bu sitede çalışsın"** anahtarını açın; panel, kısayollar ve karartma yalnız açtığınız sitelerde çalışır.
 
 ![Simge](icon.svg)
 

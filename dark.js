@@ -40,7 +40,7 @@
 
     const DEF = {
         // etkinlik
-        paused: false, pausedSites: [], enableAllSites: true, activeSites: [], siteRules: [],
+        paused: false, pausedSites: [], enableAllSites: false, activeSites: [], siteRules: [],
         // karartma
         pageDark: 'auto', darkModeMethod: 'smart', smartThreshold: 45, smartTint: true, smartTintThreshold: 45, smartBands: true, smartBandThreshold: 35,
         darkModeAreas: { body: true, text: false, link: false, button: false, image: false, form: false, code: false, table: false, scrollbar: false },

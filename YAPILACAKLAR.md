@@ -4,14 +4,11 @@ Planlanan ve tamamlanan iyileştirmeler.
 
 ## Bekleyenler
 
-### 1. "Bu sitede çalışsın" varsayılan olarak kapalı gelsin
-Popup'taki **"Bu sitede çalışsın — Panel, kısayollar ve karartma"** anahtarı web sitelerinde
-varsayılan olarak açık gelmeyecek. Eklenti bir sitede ancak kullanıcı bu anahtarı açınca çalışacak
-(panel, klavye kısayolları ve karartma). Şu an `enableAllSites` varsayılanı `true`
-(content.js, options.js, popup.js); `false` yapılıp ayarlar sayfasında "Tüm sitelerde çalışsın"
-seçeneği isteğe bağlı bırakılacak. Mevcut kullanıcıların kayıtlı tercihi bozulmamalı.
+Şu an bekleyen iş yok.
 
 ## Tamamlananlar
+- **Sitelerde varsayılan olarak kapalı:** Eklenti yalnız popup'taki "Bu sitede çalışsın" ile açılan
+  sitelerde çalışır (panel, kısayollar, karartma). Eski kurulumlar bir kez kapalıya geçirilir; açılmış siteler korunur.
 - **Açık mavi ve sarı tonlara örtü:** Belli bir açıklığın üstündeki mavi/sarı zeminler (bilgi kutusu,
   uyarı şeridi) aynı tonda koyulaşır; doygun orta tonlu düğmeler ve küçük öğeler korunur. Ayarlar →
   Karartma'da açılıp kapatılabilir, eşik seçilebilir (`smartTint`, `smartTintThreshold`).
