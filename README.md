@@ -24,6 +24,12 @@ Eklenti sitelerde **varsayılan olarak kapalıdır**. Bir sitede kullanmak için
 - **Menü** (⋯ ya da sağ tık) — Başlık gezgini, yer imleri (Alt+tık), otomatik kaydırma (Alt+S).
 - **Köşe uyumu** — Sitenin kendi "yukarı çık" düğmesi ya da sohbet balonu varsa panel onların
   üstüne kalkar.
+- **SVG dosyası görüntüleme** — Tarayıcıda doğrudan açılan `.svg` dosyalarının arka planı sağ alttaki
+  yuvarlak düğmeden (üzerine gelince seçenekler alt alta açılır; düğme sürüklenerek taşınabilir, yeri
+  hatırlanır) ya da popup'tan seçilir: Sistem, Koyu, Açık ya da Dama
+  (şeffaf alanları gösterir). SVG'nin boyutu, konumu ve görünümü değişmez; yalnız arkasındaki zemin değişir. Beyaz ikonlar koyu zeminde görünür.
+  Seçim tüm SVG dosyaları için hatırlanır; Alt+Shift+T seçenekler arasında geçer. Bilgisayardaki dosyalar
+  (`file://`) için `chrome://extensions` → eklenti ayrıntıları → "Dosya URL'lerine erişime izin ver" açılmalıdır.
 - **Ayarlar sayfası** — Panelin kendisi önizlemedir; her değişiklik sağ alttaki panelde anında
   görünür. Türkçe, İngilizce ve Rusça.
 

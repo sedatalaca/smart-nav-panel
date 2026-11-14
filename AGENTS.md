@@ -61,6 +61,15 @@ Navigasyon Eklentisi/
   Modal/video örtüleri `isBackdrop()` ile tanınır; `overlayOpen()` iken karartma kararı değiştirilmez.
   `invert` tüm sayfayı ters çevirir; Aydınlık seçeneği koyu siteyi açarken her zaman `invert` kullanılır. `theme` eski alan boyama.
 - Karar `storage.local.nvpDarkCache:<host>`'a yazılır; bir sonraki açılışta stil erken eklenir.
+- Doğrudan açılan SVG belgesi (`document.contentType === 'image/svg+xml'`): dark.js başındaki ayrı IIFE yalnız kök zemini
+  ayarlar (`storage.sync.svgBg = 'auto'|'dark'|'light'|'checker'`, oluşturulabilir stil sayfasıyla, SVG DOM'una dokunmadan);
+  kendi `getState`/`setSvgBg`/`toggleTheme` mesajlarını yanıtlar. Karartma IIFE'si ve content.js bu belgede hiç çalışmaz.
+  Ekran içi kontrol: kök `<svg>`'ye eklenen 0×0 `<foreignObject data-nvp-svg-ui>` içindeki XHTML `div` popover (üst katman)
+  olarak gösterilir; SVG ölçeği/kırpması etkilemez, kök boyutu ve kaydırma alanı değişmez. İçerik kapalı shadow root'ta; XML
+  ayrıştırma nedeniyle ikonlara `xmlns` yazılır. Seçenekler dikey açılır (düğme üst yarıdaysa altına); düğme sürüklenebilir,
+  konum `storage.local.nvpSvgUiPos` ({h, y, top, left}: düğmenin bulunduğu yarıya göre en yakın kenardan) olarak tüm SVG'ler için saklanır; seçenekler hep ekranın içine doğru açılır. 2,5 sn hareketsizlik / imleç ayrılması /
+  dışarı tıklama ile kapanır.
+  Popup `st.svg` gelince `renderSvg()` gösterir. "Bu sitede çalışsın" gerekmez; yalnız "Her yerde duraklat" uyulur.
 - Stil öğesi (`#nvp-dark`) document_start'ta eklendiği için sayfa ayrıştırıldıkça `ensureLast()` ile belgenin sonuna
   taşınır (eşit güçteki `!important` kurallarda sonra gelen kazanır). Akıllı yöntemin kök kuralı `:root,:root>body`
   özgüllüğündedir; sitenin `body{background:…!important}` kuralını yener. `fixTextIn()` açık zeminli alt öğenin

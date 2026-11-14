@@ -61,6 +61,13 @@ const ICON = {
     sun: svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
     gear: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>')
 };
+// SVG dosyası görünümü (tarayıcıda doğrudan açılan .svg)
+Object.assign(TRANSLATIONS.tr, { svgFile: 'SVG dosyası', svgBg: 'Arka plan', svgAuto: 'Sistem', svgDark: 'Koyu', svgLight: 'Açık', svgChecker: 'Dama',
+    svgHint: 'Seçim tüm SVG dosyaları için hatırlanır. Dama, şeffaf alanları gösterir. Kısayol: Alt+Shift+T', svgPaused: 'Her yerde duraklatıldı — arka plana dokunulmuyor' });
+Object.assign(TRANSLATIONS.en, { svgFile: 'SVG file', svgBg: 'Background', svgAuto: 'System', svgDark: 'Dark', svgLight: 'Light', svgChecker: 'Checker',
+    svgHint: 'Your choice is remembered for all SVG files. Checker reveals transparent areas. Shortcut: Alt+Shift+T', svgPaused: 'Paused everywhere — background left unchanged' });
+Object.assign(TRANSLATIONS.ru, { svgFile: 'SVG-файл', svgBg: 'Фон', svgAuto: 'Системный', svgDark: 'Тёмный', svgLight: 'Светлый', svgChecker: 'Шахматка',
+    svgHint: 'Выбор запоминается для всех SVG-файлов. Шахматка показывает прозрачные области. Сочетание: Alt+Shift+T', svgPaused: 'Пауза везде — фон не меняется' });
 const esc = (s) => (window.NVP && NVP.escapeHtml ? NVP.escapeHtml(s) : String(s));
 let D = TRANSLATIONS[UI_LANG];
 let tabId = null;
@@ -86,6 +93,23 @@ function renderUnsupported() {
     document.getElementById('content').innerHTML =
         '<div class="msg">' + esc(D.unsupported) + '<br><small>' + esc(D.unsupportedAlt) + '<br>' + esc(D.reload) + '</small></div>' +
         '<div class="foot"><button class="btn" id="settingsBtn">' + ICON.gear + esc(D.openSettings) + '</button></div>';
+    document.getElementById('settingsBtn').addEventListener('click', () => chrome.runtime.openOptionsPage());
+}
+
+function renderSvg(st) {
+    const opts = [['auto', ICON.system, D.svgAuto], ['dark', ICON.moon, D.svgDark], ['light', ICON.sun, D.svgLight],
+        ['checker', '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6v6H3zM15 3h6v6h-6zM9 9h6v6H9zM3 15h6v6H3zM15 15h6v6h-6z"/></svg>', D.svgChecker]];
+    const c = document.getElementById('content');
+    c.innerHTML = `
+      <div class="site${st.globallyPaused ? ' off' : ''}"><span class="dot"></span><div><b>${esc(st.host)}</b><small>${esc(st.globallyPaused ? D.svgPaused : D.svgFile)}</small></div></div>
+      <div class="sec">${esc(D.svgBg)}</div>
+      <div class="seg" style="grid-template-columns:repeat(4,1fr)" role="radiogroup" aria-label="${esc(D.svgBg)}">
+        ${opts.map(([m, ic, t]) => `<button data-svgbg="${m}" role="radio" aria-checked="${st.svgBg === m}" class="${st.svgBg === m ? 'on' : ''}" ${st.globallyPaused ? 'disabled' : ''}>${ic}${esc(t)}</button>`).join('')}
+      </div>
+      <div class="why">${esc(D.svgHint)}</div>
+      <hr>
+      <div class="foot"><button class="btn" id="settingsBtn">${ICON.gear}${esc(D.openSettings)}</button></div>`;
+    c.querySelectorAll('[data-svgbg]').forEach((b) => b.addEventListener('click', () => toTab({ action: 'setSvgBg', mode: b.dataset.svgbg }, () => setTimeout(refresh, 80))));
     document.getElementById('settingsBtn').addEventListener('click', () => chrome.runtime.openOptionsPage());
 }
 
@@ -153,6 +177,7 @@ function refresh() {
         document.title = D.title;
         toTab({ action: 'getState' }, (st) => {
             if (!st || !st.supported) { renderUnsupported(); return; }
+            if (st.svg) { renderSvg(st); return; }
             render(st, s);
         });
     });

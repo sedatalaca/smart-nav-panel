@@ -14,6 +14,8 @@
  * ============================================================================ */
 (function () {
     'use strict';
+    // Doğrudan açılan SVG dosyasında panel yok: arka plan seçimi dark.js'teki SVG görüntüleyicisindedir
+    if (document.contentType === 'image/svg+xml') return;
     // Eklenti yeniden yüklenince eski (öksüz) kopya kalır; yalnız canlıysa çık
     if (window.__nvpContentLoaded) {
         try { if (window.__nvpContentAlive && window.__nvpContentAlive()) return; } catch (_) { /* öksüz kopya */ }

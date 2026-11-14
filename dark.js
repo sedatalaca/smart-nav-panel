@@ -15,8 +15,209 @@
  *
  * content.js ile aynı izole dünyada çalışır; durum window.__nvpDark üzerinden paylaşılır.
  * ============================================================================ */
+// ── Tarayıcıda doğrudan açılan SVG dosyaları ─────────────────────────────
+// Normal sayfa değildir (image/svg+xml): panel ve akıllı karartma çalışmaz. Bunun yerine SVG'ye
+// dokunmadan arkasındaki zemin seçilir: Sistem / Koyu / Açık / Dama (şeffaf alanları görmek için).
+// Seçim tüm SVG dosyaları için storage.sync.svgBg'de tutulur; popup ve Alt+Shift+T değiştirir.
 (function () {
     'use strict';
+    if (document.contentType !== 'image/svg+xml' || window.__nvpSvg) return;
+    window.__nvpSvg = true;
+    const MODES = ['auto', 'dark', 'light', 'checker'];
+    const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : { matches: false, addEventListener() {} };
+    const alive = () => { try { return !!(chrome.runtime && chrome.runtime.id); } catch (_) { return false; } };
+    let mode = 'auto', paused = false, sheet = null, styleEl = null;
+    const tile = (bg, fg) => 'background-color:' + bg + '!important;background-image:linear-gradient(45deg,' + fg + ' 25%,transparent 25%),' +
+        'linear-gradient(-45deg,' + fg + ' 25%,transparent 25%),linear-gradient(45deg,transparent 75%,' + fg + ' 75%),' +
+        'linear-gradient(-45deg,transparent 75%,' + fg + ' 75%)!important;background-size:20px 20px!important;' +
+        'background-position:0 0,0 10px,10px -10px,-10px 0!important';
+    function css() {
+        if (paused) return '';
+        const dark = mode === 'dark' || (mode !== 'light' && mq.matches);
+        if (mode === 'checker') return ':root{' + (dark ? tile('#1b1c21', '#2c2e35') : tile('#ffffff', '#d9dbe1')) + '}';
+        return ':root{background:' + (dark ? '#1b1c21' : '#ffffff') + '!important}';
+    }
+    function apply() {
+        updateUI();
+        const text = css();
+        // Belgeyi değiştirmeden (kaydedince SVG'ye girmesin) oluşturulabilir stil sayfasıyla; olmazsa <style>
+        try {
+            if (!sheet) { sheet = new CSSStyleSheet(); document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]; }
+            sheet.replaceSync(text);
+            return;
+        } catch (_) { /* eski motor: aşağıdaki yol */ }
+        const root = document.documentElement;
+        if (!root) return;
+        if (!styleEl) styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+        styleEl.textContent = text;
+        if (!styleEl.isConnected) root.insertBefore(styleEl, root.firstChild);
+    }
+    function save() { try { chrome.storage.sync.set({ svgBg: mode }, () => void chrome.runtime.lastError); } catch (_) { /* yok say */ } }
+
+    // ── Ekran içi kontrol ──
+    // SVG belgesi HTML panelini çizmez; kontrol, 0×0 bir <foreignObject> içindeki HTML öğesinin tarayıcı
+    // üst katmanında (popover) gösterilmesiyle çizilir. Üst katman SVG'nin ölçeğinden ve kırpmasından
+    // bağımsızdır: SVG'nin boyutu, konumu ve görünümü değişmez.
+    let lang = 'en';
+    try { const l = String(chrome.i18n.getUILanguage() || 'en').slice(0, 2).toLowerCase(); lang = l === 'tr' || l === 'ru' ? l : 'en'; } catch (_) { /* yok say */ }
+    const TXT = {
+        tr: { auto: 'Sistem', dark: 'Koyu', light: 'Açık', checker: 'Dama', title: 'SVG arka planı' },
+        en: { auto: 'System', dark: 'Dark', light: 'Light', checker: 'Checker', title: 'SVG background' },
+        ru: { auto: 'Системный', dark: 'Тёмный', light: 'Светлый', checker: 'Шахматка', title: 'Фон SVG' }
+    };
+    // SVG belgesi XML'dir: iç HTML de XML olarak ayrıştırılır, ikonlara ad alanı yazılmalı
+    const ic = (p) => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+    const ICONS = {
+        auto: ic('<rect x="2.5" y="3.5" width="19" height="13" rx="2"/><path d="M8 20.5h8M12 16.5v4"/>'),
+        dark: ic('<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>'),
+        light: ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+        checker: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6v6H3zM15 3h6v6h-6zM9 9h6v6H9zM3 15h6v6H3zM15 15h6v6h-6z"/></svg>'
+    };
+    const UI_CSS = ':host{all:initial}' +
+        // Dikey: seçenekler düğmenin üstünde alt alta; düğme ekranın üst yarısındaysa (.down) altında
+        '.w{display:flex;flex-direction:column;align-items:flex-end;gap:8px;font:600 12px/1 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-user-select:none;user-select:none;touch-action:none}' +
+        '.w.down{flex-direction:column-reverse}.w.left{align-items:flex-start}' +
+        '.fab{appearance:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;cursor:pointer;opacity:.72;transition:opacity .2s,transform .2s;padding:0;' +
+        'box-shadow:0 6px 18px rgba(0,0,0,.28)}' +
+        '.fab svg,.seg svg{width:16px;height:16px;display:block}' +
+        '.w.open .fab,.fab:hover,.fab:focus-visible{opacity:1}' +
+        '.seg{display:none;flex-direction:column;gap:3px;padding:4px;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.28)}' +
+        '.w.open .seg{display:flex}' +
+        '.w.dragging .seg{display:none}.w.dragging .fab{cursor:grabbing;opacity:1}' +
+        '.seg button{appearance:none;border:0;background:transparent;padding:8px 12px 8px 10px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font:inherit;white-space:nowrap;width:100%}' +
+        '.seg button.on{background:#37a8a8!important;color:#fff!important}' +
+        '.dark .fab,.dark .seg{background:#24262d;color:#e8eaf0;border:1px solid rgba(255,255,255,.12)}.dark .seg button{color:#c9ccd4}.dark .seg button:hover{background:rgba(255,255,255,.08)}' +
+        '.light .fab,.light .seg{background:#fff;color:#1f2329;border:1px solid rgba(15,23,42,.14)}.light .seg button{color:#4a5060}.light .seg button:hover{background:rgba(15,23,42,.06)}' +
+        'button:focus-visible{outline:2px solid #37a8a8;outline-offset:2px}@media print{.w{display:none}}';
+    let ui = null, uiTimers = { idle: 0, leave: 0 };
+    // Konum: sağ kenara ve (düğme ekranın alt yarısındaysa) alt kenara, üst yarısındaysa üst kenara göre
+    // tutulur; seçenekler açılınca düğme yerinden oynamaz. Tüm SVG dosyaları için storage.local'da saklanır.
+    const POS_KEY = 'nvpSvgUiPos';
+    // { h, y, top, left } : yatay uzaklık (sol yarıdaysa soldan, değilse sağdan), dikey uzaklık (üst yarıdaysa
+    // üstten, değilse alttan). Seçenekler hep ekranın içine doğru açılır. Eski kayıt { r, y, top } de okunur.
+    let uiPos = null;
+    function placeUI() {
+        if (!ui) return;
+        const W = window.innerWidth, H = window.innerHeight, S = 40;
+        const p = uiPos || { h: 20, y: 20, top: false, left: false };
+        const h = Math.min(Math.max(p.h != null ? p.h : p.r, 4), W - S - 4), y = Math.min(Math.max(p.y, 4), H - S - 4);
+        const v = p.top ? [y + 'px', 'auto'] : ['auto', y + 'px'];          // top, bottom
+        const hz = p.left ? ['auto', h + 'px'] : [h + 'px', 'auto'];        // right, left
+        ui.pop.style.setProperty('inset', v[0] + ' ' + hz[0] + ' ' + v[1] + ' ' + hz[1], 'important');
+        ui.w.classList.toggle('down', !!p.top);
+        ui.w.classList.toggle('left', !!p.left);
+    }
+    function loadPos() {
+        try { chrome.storage.local.get({ [POS_KEY]: null }, (d) => { const v = d && d[POS_KEY]; if (v && typeof (v.h != null ? v.h : v.r) === 'number' && typeof v.y === 'number') { uiPos = v; placeUI(); } }); } catch (_) { /* yok say */ }
+    }
+    function savePos() { try { chrome.storage.local.set({ [POS_KEY]: uiPos }, () => void chrome.runtime.lastError); } catch (_) { /* yok say */ } }
+    window.addEventListener('resize', () => placeUI(), { passive: true });
+    function uiClose() { if (!ui) return; ui.w.classList.remove('open'); clearTimeout(uiTimers.idle); }
+    function uiBump() { clearTimeout(uiTimers.idle); uiTimers.idle = setTimeout(uiClose, 2500); }
+    function uiOpen() { if (!ui) return; ui.w.classList.add('open'); uiBump(); }
+    function buildUI() {
+        if (ui || paused) return;
+        const root = document.documentElement;
+        if (!root || root.namespaceURI !== 'http://www.w3.org/2000/svg') return;
+        const pop = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+        if (typeof pop.showPopover !== 'function') return;                 // üst katman desteklenmiyor
+        const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+        fo.setAttribute('width', '0'); fo.setAttribute('height', '0'); fo.setAttribute('data-nvp-svg-ui', '');
+        pop.setAttribute('popover', 'manual');
+        pop.style.cssText = 'position:fixed!important;inset:auto 20px 20px auto!important;margin:0!important;padding:0!important;border:0!important;' +
+            'background:transparent!important;overflow:visible!important;width:auto!important;height:auto!important;max-width:none!important;max-height:none!important';
+        const sr = pop.attachShadow({ mode: 'closed' });
+        const L = TXT[lang] || TXT.en;
+        sr.innerHTML = '<style>' + UI_CSS + '</style><div class="w" role="toolbar" aria-label="' + L.title + '"><div class="seg" role="radiogroup" aria-label="' + L.title + '">' +
+            MODES.map((m) => '<button type="button" role="radio" data-m="' + m + '" title="' + L[m] + '">' + ICONS[m] + '<span>' + L[m] + '</span></button>').join('') +
+            '</div><button type="button" class="fab" title="' + L.title + '" aria-label="' + L.title + '"></button></div>';
+        const w = sr.querySelector('.w'), fab = sr.querySelector('.fab');
+        fab.addEventListener('mouseenter', () => { if (!w.classList.contains('dragging')) uiOpen(); });
+        // Basılı tutup sürükle: düğme taşınır (5 px'ten az hareket = normal tıklama)
+        let drag = null, suppress = false;
+        fab.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
+            const rc = fab.getBoundingClientRect();
+            drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, x: rc.left, y: rc.top, moved: false };
+            try { fab.setPointerCapture(e.pointerId); } catch (_) { /* yok say */ }
+        });
+        fab.addEventListener('pointermove', (e) => {
+            if (!drag || e.pointerId !== drag.id) return;
+            const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+            if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+            if (!drag.moved) { drag.moved = true; uiClose(); w.classList.add('dragging'); }
+            const W = window.innerWidth, H = window.innerHeight, S = 40;
+            const x = Math.min(Math.max(drag.x + dx, 4), W - S - 4), y = Math.min(Math.max(drag.y + dy, 4), H - S - 4);
+            const top = y + S / 2 < H / 2, left = x + S / 2 < W / 2;
+            uiPos = { h: left ? x : W - x - S, y: top ? y : H - y - S, top, left };
+            placeUI();
+        });
+        const endDrag = (e) => {
+            if (!drag || (e && e.pointerId !== drag.id)) return;
+            if (drag.moved) { w.classList.remove('dragging'); suppress = true; setTimeout(() => { suppress = false; }, 0); savePos(); }
+            drag = null;
+        };
+        fab.addEventListener('pointerup', endDrag);
+        fab.addEventListener('pointercancel', endDrag);
+        fab.addEventListener('click', () => { if (suppress) return; if (w.classList.contains('open')) uiClose(); else uiOpen(); });
+        w.addEventListener('mouseleave', () => { clearTimeout(uiTimers.leave); uiTimers.leave = setTimeout(() => { if (!w.matches(':hover')) uiClose(); }, 600); });
+        w.addEventListener('mouseenter', () => clearTimeout(uiTimers.leave));
+        ['pointermove', 'pointerdown', 'keydown'].forEach((ev) => w.addEventListener(ev, () => { if (w.classList.contains('open')) uiBump(); }, { passive: true }));
+        sr.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => { mode = b.dataset.m; apply(); save(); uiBump(); }));
+        document.addEventListener('pointerdown', (e) => { if (ui && e.target !== ui.pop && !e.composedPath().includes(ui.pop)) uiClose(); }, true);
+        fo.appendChild(pop);
+        root.appendChild(fo);
+        try { pop.showPopover(); } catch (_) { fo.remove(); return; }
+        ui = { fo, pop, w, fab, sr };
+        placeUI();
+        loadPos();
+    }
+    function updateUI() {
+        if (paused) { if (ui) { ui.fo.remove(); ui = null; } return; }
+        if (!ui) buildUI();
+        if (!ui) return;
+        const dark = mode === 'dark' || (mode !== 'light' && mq.matches);
+        ui.w.classList.toggle('dark', dark);
+        ui.w.classList.toggle('light', !dark);
+        ui.fab.innerHTML = ICONS[mode] || ICONS.auto;
+        ui.sr.querySelectorAll('[data-m]').forEach((b) => { const on = b.dataset.m === mode; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+    }
+    // Belge (kök <svg>) hazır olunca kontrolü kur; document_start'ta kök henüz olmayabilir
+    if (!document.documentElement) {
+        const mo = new MutationObserver(() => { if (document.documentElement) { mo.disconnect(); apply(); } });
+        mo.observe(document, { childList: true });
+    }
+    window.addEventListener('pagehide', () => { if (ui) { ui.fo.remove(); ui = null; } }, { once: true });
+    try {
+        chrome.storage.sync.get({ svgBg: 'auto', paused: false, language: '' }, (r) => {
+            if (!chrome.runtime.lastError && r) {
+                mode = MODES.includes(r.svgBg) ? r.svgBg : 'auto';
+                paused = !!r.paused;
+                if (TXT[r.language] && r.language !== lang) { lang = r.language; if (ui) { ui.fo.remove(); ui = null; } }   // eklentinin dil seçimi
+            }
+            apply();
+        });
+        chrome.storage.onChanged.addListener((ch, area) => {
+            if (area !== 'sync' || !alive()) return;
+            if (ch.svgBg) mode = MODES.includes(ch.svgBg.newValue) ? ch.svgBg.newValue : 'auto';
+            if (ch.paused) paused = !!ch.paused.newValue;
+            if (ch.svgBg || ch.paused) apply();
+        });
+        chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+            if (!msg || !msg.action) return;
+            const name = decodeURIComponent((location.pathname.split('/').pop() || location.hostname || 'SVG'));
+            if (msg.action === 'getState') reply({ supported: true, svg: true, svgBg: mode, host: name, globallyPaused: paused, dark: mq.matches });
+            else if (msg.action === 'setSvgBg' && MODES.includes(msg.mode)) { mode = msg.mode; apply(); save(); reply({ svgBg: mode }); }
+            else if (msg.action === 'toggleTheme') { mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length]; apply(); save(); reply({ svgBg: mode }); }
+        });
+    } catch (_) { apply(); }
+    mq.addEventListener('change', apply);
+    apply();
+})();
+
+(function () {
+    'use strict';
+    if (document.contentType === 'image/svg+xml') return;   // SVG dosyası: yukarıdaki görüntüleyici modu
     if (window.__nvpDark) {
         try { if (window.__nvpDark.alive && window.__nvpDark.alive()) return; } catch (_) { /* öksüz kopya */ }
         const old = document.getElementById('nvp-dark');

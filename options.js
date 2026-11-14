@@ -27,6 +27,7 @@ const defaults = {
     pausedSites: [],
     activeSites: [],
     enableAllSites: false,
+    svgBg: 'auto',
     siteRules: [],
     autoHide: true,
     autoHideDelay: 300,
